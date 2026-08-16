@@ -236,7 +236,6 @@ See `RUN_WINDOWS_FREE_LLM.md` for the Windows step-by-step guide.
 | Asset | Location |
 |---|---|
 | Slide deck content | `deliverables/PRESENTATION_CONTENT.md` |
-| Demo script | `deliverables/DEMO_SCRIPT.md` |
 | Development prompt trace | `deliverables/development_prompt_trace.md` |
 | Pre-run benchmark results | `benchmark_results/` |
 | RL interface reference | `docs/rl_interface.md` |
