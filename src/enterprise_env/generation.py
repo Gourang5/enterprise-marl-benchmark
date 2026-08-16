@@ -15,11 +15,67 @@ class Difficulty:
 
 
 PRESETS = {
-    "easy": Difficulty("easy", None, 2),
-    "medium": Difficulty("medium", None, 6),
-    "hard": Difficulty("hard", None, 15),
+    "easy":        Difficulty("easy",        None, 2),
+    "medium":      Difficulty("medium",      None, 6),
+    "hard":        Difficulty("hard",        None, 15),
     "adversarial": Difficulty("adversarial", None, 30),
 }
+
+# Realistic near-miss email subjects: same domain, different specifics
+_DISTRACTOR_SUBJECTS = [
+    "Quarterly VPN certificate renewal",
+    "Sandbox API token expiry — dev cluster",
+    "Analytics dashboard p95 latency note",
+    "Mobile sign-in UX feedback — partner review",
+    "Catalog webhook retry backlog cleared",
+    "Conference travel request — Q3 summit",
+    "Intern onboarding checklist reminder",
+    "Non-prod load test scheduling window",
+    "Post-launch retrospective date poll",
+    "Docs site deployment rollback notice",
+]
+
+# Bodies look like real enterprise messages, just about the wrong thing
+_DISTRACTOR_BODIES = [
+    "Non-production certificate rotation — no action needed from platform team this week.",
+    "The sandbox API token expired during last night's deployment; staging environments unaffected.",
+    "P95 latency on the analytics dashboard increased by 120ms. Reads are available; write path unaffected.",
+    "Partner shared UX notes on the mobile sign-in screen. No auth or API changes required.",
+    "Webhook retry queue peaked at 4,200 items overnight; self-cleared by 06:00. No data loss.",
+    "Approved travel to Q3 industry summit. Expense report due within 14 days of return.",
+    "New intern joining the platform team next Monday. Laptop and access requests sent to IT.",
+    "Load test window reserved for non-prod environment Saturday 22:00–02:00. Production unaffected.",
+    "Retrospective date poll for the last sprint — please fill in your availability by EOD.",
+    "Docs site was rolled back to the previous build after a broken anchor link was detected.",
+]
+
+# Jira noise titles/descriptions: plausible tickets, wrong project or already resolved
+_JIRA_NOISE = [
+    ("Quarterly access review — contractor accounts",
+     "Standard contractor access review cycle. No changes expected for permanent employees."),
+    ("Non-prod credential rotation",
+     "Sandbox environment credential rotation per security policy; production unaffected."),
+    ("Dashboard latency investigation",
+     "Analytics dashboard occasional slowness. No production blocking; investigation ongoing."),
+    ("Post-launch copy review follow-up",
+     "Marketing copy review scheduled after launch week. No engineering dependency."),
+    ("Observability metrics naming alignment",
+     "Renaming internal histogram labels to match naming convention. No external impact."),
+    ("Stale A/B experiment cleanup",
+     "Experiment from three quarters ago needs archival; feature flags already disabled."),
+    ("Release branch tag verification",
+     "Verify release tag checksum after automated CI tagging step. Routine post-release check."),
+]
+
+# Slack noise: plausible channel messages, clearly off-topic
+_SLACK_NOISE = [
+    "Team lunch at noon — conference room 4B reserved.",
+    "Reminder: weekly platform standup in 15 minutes.",
+    "The espresso machine on floor 3 is back in service.",
+    "Off-site planning doc has been shared in the team Drive folder.",
+    "Friday wrap-up notes posted in the wiki. See you Monday!",
+    "Heads up: building fire drill at 14:30 today, non-disruptive.",
+]
 
 
 @dataclass(frozen=True)
@@ -33,9 +89,14 @@ class ScenarioSpec:
 class ScenarioFactory:
     """Parameterized scenario factory for reproducible train/dev/test generation.
 
-    Task families provide the core dependency DAG and verifier. The factory varies seed,
-    distractor density, step budget, and split membership while preserving deterministic
-    replay and exact solvability checks.
+    Task families provide the core dependency DAG and verifier. The factory varies:
+    - seed (determines distractor content and entity name suffixes)
+    - distractor density (easy→adversarial)
+    - step budget
+
+    Architecture is designed to extend into org-topology variation, permission
+    configuration, workflow-DAG swapping, and OOD entity splits — the factory
+    plumbing is intentionally parameterized for those future axes.
     """
 
     def resolve_difficulty(self, difficulty="medium"):
@@ -59,15 +120,15 @@ class ScenarioFactory:
         diff = self.resolve_difficulty(difficulty)
         task = TASKS[task_name]()
         return {
-            "task_name": task_name,
-            "task_id": task.task_id,
-            "seed": int(seed),
-            "difficulty": diff.name,
-            "split": split,
-            "max_steps": diff.max_steps or task.max_steps,
-            "distractors": diff.distractors,
-            "apps": self._task_apps(task_name),
-            "subgoal_count": len(task.subgoals()),
+            "task_name":    task_name,
+            "task_id":      task.task_id,
+            "seed":         int(seed),
+            "difficulty":   diff.name,
+            "split":        split,
+            "max_steps":    diff.max_steps or task.max_steps,
+            "distractors":  diff.distractors,
+            "apps":         self._task_apps(task_name),
+            "subgoal_count":len(task.subgoals()),
         }
 
     def generate_split(self, task_names=None, n=100, split="train", difficulty="medium", seed=0):
@@ -124,49 +185,43 @@ class ScenarioFactory:
             visit(gid)
         return True
 
-    def _inject_distractors(self, env, seed, count):
+    def _inject_distractors(self, env, seed: int, count: int):
+        """Inject realistic near-miss distractors — same enterprise domain, wrong task."""
         rng = random.Random((seed + 1) * 7919)
-        subjects = [
-            "Routine access review", "Sandbox credential rotation", "Copy review follow-up",
-            "Dashboard cleanup", "Travel planning", "Invoice formatting", "Non-prod latency note",
-        ]
         for i in range(count):
-            sender = rng.choice(["product_01", "mgr_01", "cs_01", "eng_01"])
+            sender    = rng.choice(["product_01", "mgr_01", "cs_01", "eng_01"])
             recipient = rng.choice(["pm_01", "product_01", "cs_01"])
             if sender == recipient:
                 sender = "mgr_01"
-            subject = rng.choice(subjects)
+            subject = rng.choice(_DISTRACTOR_SUBJECTS)
+            body    = rng.choice(_DISTRACTOR_BODIES)
+            # Vary subject with a seed-specific suffix so distractors differ across episodes
+            suffix = f" (ref #{seed % 900 + 100 + i})"
             env.repo.add(
                 "INSERT INTO emails VALUES(?,?,?,?,?,?,0)",
-                (f"factory-noise-{seed}-{i}", sender, recipient, f"{subject} #{i}", "Routine synthetic distractor; not relevant to the active task.", 100 + i),
+                (f"factory-noise-{seed}-{i}", sender, recipient, subject + suffix, body, 100 + i),
             )
-        # Jira noise: low-priority tickets that look plausible but are not related to the task
-        jira_noise = [
-            ("Routine access review", "Standard quarterly access review cycle."),
-            ("Non-prod credential rotation", "Sandbox environment credential rotation."),
-            ("Dashboard latency note", "Analytics dashboard occasional slowness; not production-blocking."),
-            ("Copy review follow-up", "Marketing copy review; post-launch task."),
-            ("Metrics naming cleanup", "Observability housekeeping; no launch dependency."),
-        ]
+
         for i in range(min(count // 2 + 1, 3)):
-            title, desc = rng.choice(jira_noise)
+            title, desc = rng.choice(_JIRA_NOISE)
             env.repo.add(
                 "INSERT INTO jira_issues VALUES(?,?,?,?,?,?,?,?)",
-                (f"factory-noise-jira-{seed}-{i}", "PROJ-ALPHA", f"{title} #{i}", desc, "open", "P3", None, "product_01"),
+                (
+                    f"factory-noise-jira-{seed}-{i}", "PROJ-ALPHA",
+                    f"{title} #{seed % 50 + i}", desc,
+                    "open", "P3", None, "product_01",
+                ),
             )
-        # Slack noise: benign messages in random channels
-        slack_noise = [
-            "Team lunch at noon, anyone interested?",
-            "Reminder: weekly standup in 15 minutes.",
-            "Coffee machine on floor 3 is fixed.",
-            "Off-site planning doc shared in Drive.",
-        ]
+
         for i in range(min(count // 3 + 1, 2)):
-            sender = rng.choice(["product_01", "mgr_01", "cs_01", "eng_01"])
+            sender  = rng.choice(["product_01", "mgr_01", "cs_01", "eng_01"])
             channel = rng.choice(["CH-RANDOM", "CH-PROJECT"])
             env.repo.add(
                 "INSERT INTO slack_messages VALUES(?,?,?,?,?)",
-                (f"factory-noise-msg-{seed}-{i}", channel, sender, rng.choice(slack_noise), 50 + i),
+                (
+                    f"factory-noise-msg-{seed}-{i}", channel, sender,
+                    rng.choice(_SLACK_NOISE), 50 + i,
+                ),
             )
 
     @staticmethod

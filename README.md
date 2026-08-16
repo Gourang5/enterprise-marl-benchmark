@@ -10,12 +10,12 @@ A database-first, multi-agent enterprise RL benchmark for long-horizon workflows
 - Agent observations do **not** expose hidden verifier/subgoal state or the full Jira database.
 - Search-first information discovery in Gmail, Slack and Jira.
 - Real dependency-gated subgoal DAGs: later credit is unavailable until prerequisites are achieved.
-- Four distinct research tasks with different failure modes, including one five-app cross-team workflow.
+- Six distinct research tasks with different failure modes, including multiple five-app cross-team workflows.
 - Actor-selected/event-driven multi-agent turns instead of mandatory five-person round-robin filler actions.
 - Role-based permissions and heterogeneous capabilities.
 - Reward anti-hacking: successful no-op/repeated reads are penalized rather than rewarded.
 - Deterministic state-based verification with zero free progress at reset.
-- Rule-based baselines for **all four tasks**.
+- Rule-based baselines for **all six tasks**.
 - Factory validation hook for task DAGs and initial solvability invariants.
 - Seed-dependent distractor variation so benchmark seeds produce different observable scenarios.
 - Strict action-parameter validation: malformed LLM actions become invalid transitions instead of crashing the episode.
@@ -45,6 +45,16 @@ Customer Success must discover a private partner commitment, hand it to Product,
 
 Research properties: private information, cross-agent dependency, permission asymmetry, five-app workflow, evidence grounding, approval chain.
 
+### 5. Budget Approval
+Engineering estimates a project cost on a Jira ticket, a manager approves it, and the approval must be recorded in the budget tracker sheet (only the product manager may write the sheet) and announced in the engineering Slack channel.
+
+Research properties: strict RBAC enforcement, multi-step approval chain, sheet-write permission boundary, cross-app coordination.
+
+### 6. Vendor Onboarding
+A new vendor (TechNova Solutions) must be onboarded: Legal must clear the contract ticket, IT must confirm provisioning, the Engineering Manager must approve procurement, the vendor tracker sheet must be updated to ACTIVE (only pm_01 may write), a kickoff meeting must be scheduled, and completion announced in the procurement channel.
+
+Research properties: parallel prerequisite subgoals, strict RBAC on sheet writes, multi-agent role separation, five-app workflow.
+
 ## Architecture
 
 ```text
@@ -70,7 +80,7 @@ SQLite shared company state
         +--> audit / trajectory log
 ```
 
-The evaluator state and agent observation are deliberately separated. `info["subgoals"]` is available to the benchmark/evaluator, while the agent observation only contains its identity, inbox headers, accessible channels, calendar and high-level task instruction.
+The evaluator state and agent observation are deliberately separated. Evaluator-only keys (`progress`, `subgoals`, `reward_components`) are nested under `info["eval"]` — invisible to RL policies. The agent-facing `info` contains only `success`, `message`, and `step`. Agent observations contain only identity, inbox headers, accessible channels, calendar, and the high-level task instruction.
 
 ## Install and run
 
@@ -102,6 +112,8 @@ python scripts/run_benchmark.py --task customer_incident --episodes 100
 python scripts/run_benchmark.py --task product_launch --episodes 100
 python scripts/run_benchmark.py --task meeting_conflict --episodes 100
 python scripts/run_benchmark.py --task launch_readiness --episodes 100
+python scripts/run_benchmark.py --task budget_approval --episodes 100
+python scripts/run_benchmark.py --task vendor_onboarding --episodes 100
 ```
 
 Inspect the seeded company:
@@ -216,7 +228,7 @@ See `RUN_WINDOWS_FREE_LLM.md` for the complete Windows/VS Code step-by-step guid
 
 ## Final validation
 
-The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **33 automated tests**, 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
+The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **34 automated tests** (including negation-hardening tests for all task verifiers), 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
 
 ## Local PC quick start
 
@@ -295,6 +307,19 @@ python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b --task 
 ### Why the previous Ollama run failed
 
 The saved failed trajectory used natural-language searches such as `authentication outage` and `production authentication outage`. The old repository implementation required the complete query string to occur contiguously in the target text, so semantically correct searches returned zero results. Small local models then tended to retry equivalent searches until the duplicate-action guard stopped the episode. Search now uses deterministic lexical term matching and ranking, preserving task difficulty while making the simulated enterprise search tool behave realistically.
+
+## Baseline taxonomy and benchmark credibility
+
+Four baselines are included. Their intended use and credibility differ:
+
+| Baseline | Score | Credibility |
+|---|---|---|
+| **Oracle** | ~100 % | Deterministic rule-based upper bound. Confirms the task is solvable. |
+| **Hint-guided / SOP-guided** | ~93 % | Receives exact ticket IDs, cell addresses, and verbatim JSON payloads in its context. **Not evidence of autonomous capability** — treat as an oracle debug baseline or SOP execution check, not as an LLM intelligence score. |
+| **Zero-shot LLM** | 0–10 % | No hints; tests genuine autonomous multi-agent reasoning on novel task instances. The meaningful research number. |
+| **Random** | ~0 % | Action-space lower bound. Confirms the reward function is not trivially hackable. |
+
+When citing results, always report the zero-shot score. The hint-guided score should be labeled "SOP-guided debug baseline (hint-injected)" to avoid inflating perceived LLM capability.
 
 ### Research integrity
 

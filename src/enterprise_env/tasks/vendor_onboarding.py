@@ -1,4 +1,4 @@
-from .base import BaseTask, Subgoal
+from .base import BaseTask, Subgoal, _affirms
 import random
 
 
@@ -23,20 +23,16 @@ class VendorOnboardingTask(BaseTask):
     )
 
     def setup(self, repo, seed):
-        # Register vendor project (new project, must insert before Jira issues)
         repo.add("INSERT INTO projects VALUES(?,?,?)", ("PROJ-VENDOR", "Vendor & Procurement", "pm_01"))
 
-        # Onboarding request email
         repo.add("INSERT INTO emails VALUES(?,?,?,?,?,?,0)", (
             "vendor-request-001", "cs_01", "pm_01",
             "New Vendor Onboarding Request: TechNova Solutions",
             "TechNova Solutions has been selected as our new data analytics vendor. "
             "Please initiate the onboarding process: legal review, IT provisioning, "
-            "and procurement sign-off are all required before go-live.",
-            5,
+            "and procurement sign-off are all required before go-live.", 5,
         ))
 
-        # Main procurement ticket
         repo.add("INSERT INTO jira_issues VALUES(?,?,?,?,?,?,?,?)", (
             "VEND-401", "PROJ-VENDOR",
             "Vendor Onboarding: TechNova Solutions — Procurement Approval",
@@ -45,8 +41,6 @@ class VendorOnboardingTask(BaseTask):
             "and manager sign-off before vendor can be marked active.",
             "open", "high", None, "pm_01",
         ))
-
-        # Legal review sub-ticket
         repo.add("INSERT INTO jira_issues VALUES(?,?,?,?,?,?,?,?)", (
             "VEND-402", "PROJ-VENDOR",
             "Legal Review: TechNova Solutions Vendor Contract",
@@ -54,8 +48,6 @@ class VendorOnboardingTask(BaseTask):
             "procurement policies, data handling requirements, and SLA terms.",
             "open", "high", None, "product_01",
         ))
-
-        # IT provisioning sub-ticket
         repo.add("INSERT INTO jira_issues VALUES(?,?,?,?,?,?,?,?)", (
             "VEND-403", "PROJ-VENDOR",
             "IT Provisioning: TechNova Solutions Environment Setup",
@@ -64,11 +56,14 @@ class VendorOnboardingTask(BaseTask):
             "open", "high", None, "eng_01",
         ))
 
-        # Vendor tracker sheet
         repo.add("INSERT INTO spreadsheets VALUES(?,?,?)", ("SHEET-VENDOR", "Vendor Tracker", "pm_01"))
+        # Only pm_01 may write the vendor sheet; mgr_01 is viewer to enforce the stated boundary.
         for eid, role in {
-            "pm_01": "owner", "mgr_01": "editor", "product_01": "viewer",
-            "eng_01": "viewer", "cs_01": "viewer",
+            "pm_01": "owner",
+            "product_01": "viewer",
+            "eng_01": "viewer",
+            "mgr_01": "viewer",
+            "cs_01": "viewer",
         }.items():
             repo.add("INSERT INTO sheet_members VALUES(?,?,?)", ("SHEET-VENDOR", eid, role))
         for cell, value in {
@@ -80,26 +75,29 @@ class VendorOnboardingTask(BaseTask):
                 ("SHEET-VENDOR", cell, value, "pm_01", 0),
             )
 
-        # Procurement channel (new channel for vendor coordination)
         repo.add("INSERT INTO channels VALUES(?,?)", ("CH-PROCUREMENT", "#procurement"))
         for eid in ["pm_01", "product_01", "eng_01", "mgr_01", "cs_01"]:
             repo.add("INSERT INTO channel_members VALUES(?,?)", ("CH-PROCUREMENT", eid))
-
-        # Seed Slack message to make channel visible in observations
         repo.add("INSERT INTO slack_messages VALUES(?,?,?,?,?)", (
             "vendor-msg-1", "CH-PROCUREMENT", "cs_01",
             "TechNova Solutions contract has been signed. Procurement process can begin.", 2,
         ))
 
-        # Distractor noise
         rng = random.Random(seed)
+        # Realistic near-miss noise tickets from the same vendor project
         noise_tickets = [
-            ("VEND-398", "PROJ-VENDOR", "Vendor audit — legacy supplier",
-             "Routine annual audit of legacy data provider contracts.", "resolved", "low", None, "mgr_01"),
-            ("VEND-399", "PROJ-VENDOR", "Vendor offboarding — OldVendorCo",
-             "Sunset integration with OldVendorCo; non-critical.", "open", "low", None, "pm_01"),
-            ("VEND-400", "PROJ-VENDOR", "Software license renewal — internal tools",
-             "Standard annual renewal for productivity suite.", "resolved", "low", None, "product_01"),
+            ("VEND-398", "PROJ-VENDOR",
+             "Vendor audit — legacy data supplier",
+             "Annual compliance audit of legacy data provider contract; no action required this quarter.",
+             "resolved", "low", None, "mgr_01"),
+            ("VEND-399", "PROJ-VENDOR",
+             "Vendor offboarding — OldVendorCo",
+             "Sunset integration with OldVendorCo; integration already frozen, offboarding in progress.",
+             "open", "low", None, "pm_01"),
+            ("VEND-400", "PROJ-VENDOR",
+             "Software license renewal — internal productivity suite",
+             "Standard annual renewal; approved last quarter, no new spend required.",
+             "resolved", "low", None, "product_01"),
         ]
         rng.shuffle(noise_tickets)
         for row in noise_tickets[: 1 + seed % 3]:
@@ -107,14 +105,21 @@ class VendorOnboardingTask(BaseTask):
 
     def subgoals(self):
         return [
-            Subgoal("discover_request",  "pm_01 reads the vendor onboarding request email"),
-            Subgoal("find_main_ticket",  "pm_01 searches Jira and reads the VEND-401 procurement ticket",  ("discover_request",)),
-            Subgoal("legal_review",      "product_01 records legal clearance on VEND-402",                ("discover_request",)),
-            Subgoal("it_provisioning",   "eng_01 confirms IT provisioning in VEND-403",                   ("discover_request",)),
-            Subgoal("manager_approval",  "mgr_01 approves the onboarding on VEND-401",                    ("find_main_ticket",)),
-            Subgoal("update_vendor_sheet", "pm_01 marks the vendor ACTIVE in the tracker sheet",          ("manager_approval",)),
-            Subgoal("schedule_kickoff",  "Schedule an onboarding kickoff with pm_01, eng_01, product_01", ("legal_review", "it_provisioning")),
-            Subgoal("announce_live",     "pm_01 announces vendor onboarding completion in Slack",          ("schedule_kickoff", "update_vendor_sheet")),
+            Subgoal("discover_request",   "pm_01 reads the vendor onboarding request email"),
+            Subgoal("find_main_ticket",   "pm_01 searches Jira and reads the VEND-401 procurement ticket",
+                    ("discover_request",)),
+            Subgoal("legal_review",       "product_01 records legal clearance on VEND-402",
+                    ("discover_request",)),
+            Subgoal("it_provisioning",    "eng_01 confirms IT provisioning in VEND-403",
+                    ("discover_request",)),
+            Subgoal("manager_approval",   "mgr_01 approves the onboarding on VEND-401",
+                    ("find_main_ticket",)),
+            Subgoal("update_vendor_sheet","pm_01 marks the vendor ACTIVE in the tracker sheet",
+                    ("manager_approval",)),
+            Subgoal("schedule_kickoff",   "Schedule an onboarding kickoff with pm_01, eng_01, product_01",
+                    ("legal_review", "it_provisioning")),
+            Subgoal("announce_live",      "pm_01 announces vendor onboarding completion in Slack",
+                    ("schedule_kickoff", "update_vendor_sheet")),
         ]
 
     def verify_subgoal(self, repo, g):
@@ -129,28 +134,32 @@ class VendorOnboardingTask(BaseTask):
                 and repo.has_action("pm_01", "jira", "read_issue", "VEND-401")
             )
         if g == "legal_review":
+            # Negation-hardened: "NOT compliant" / "NOT cleared" must not satisfy legal clearance
             return any(
                 c["author_id"] == "product_01"
-                and any(kw in c["comment"].lower() for kw in ("legal", "cleared", "compliant", "approved", "review"))
+                and any(_affirms(c["comment"], kw) for kw in ("legal", "cleared", "compliant", "approved"))
                 for c in repo.comments("VEND-402")
             )
         if g == "it_provisioning":
+            # Negation-hardened: "NOT provisioned" / "NOT setup" must not pass
             return any(
                 c["author_id"] == "eng_01"
-                and any(kw in c["comment"].lower() for kw in ("setup", "provisioned", "configured", "ready", "complete"))
+                and any(_affirms(c["comment"], kw) for kw in ("setup", "provisioned", "configured", "complete"))
                 for c in repo.comments("VEND-403")
             )
         if g == "manager_approval":
+            # Negation-hardened: "NOT approved" must not pass
             return any(
-                c["author_id"] == "mgr_01" and "approved" in c["comment"].lower()
+                c["author_id"] == "mgr_01" and _affirms(c["comment"], "approved")
                 for c in repo.comments("VEND-401")
             )
         if g == "update_vendor_sheet":
             cell = repo.sheet_cell("SHEET-VENDOR", "B2")
+            # Sheet RBAC enforces that only pm_01 can write; verify value is affirmatively ACTIVE
             return (
                 cell is not None
                 and cell["updated_by"] == "pm_01"
-                and "active" in cell["value"].lower()
+                and _affirms(cell["value"], "active")
             )
         if g == "schedule_kickoff":
             for e in repo.events_for("pm_01"):
@@ -168,7 +177,7 @@ class VendorOnboardingTask(BaseTask):
             return any(
                 m["sender_id"] == "pm_01"
                 and "VEND-401" in m["text"]
-                and any(kw in m["text"].lower() for kw in ("approved", "onboarded", "complete", "live"))
+                and any(_affirms(m["text"], kw) for kw in ("approved", "onboarded", "complete", "live"))
                 for m in repo.messages("CH-PROCUREMENT")
             )
         return False
