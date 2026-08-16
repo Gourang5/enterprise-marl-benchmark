@@ -15,7 +15,7 @@ This build extends the earlier fixed prototype with implemented research infrast
 
 ## Validation
 
-- 64 automated tests pass.
+- 70 automated tests pass.
 - All six deterministic baselines complete their tasks.
 - Random-policy benchmark remains an unsolved floor in the packaged evaluation.
 - A saved Launch Readiness trajectory replays with zero mismatches.
