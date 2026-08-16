@@ -408,337 +408,361 @@ with tab_run:
 
 # ── TAB 3: policy comparison ─────────────────────────────────────────────────
 with tab_compare:
-    st.header("🆚 Four-Tier Policy Comparison")
     st.markdown(
-        "Full benchmark results across all **4 policies** and **6 tasks**. "
-        "Each tier answers a different research question about enterprise agent capability."
+        "<h2 style='margin-bottom:2px'>Policy Benchmark Deep Dive</h2>"
+        "<p style='color:#888;font-size:0.93rem;margin-top:0'>Oracle &nbsp;·&nbsp; Hint-Guided LLM &nbsp;·&nbsp; Zero-Shot LLM &mdash; head-to-head across all 6 tasks</p>",
+        unsafe_allow_html=True,
     )
 
-    # ── load all result files ────────────────────────────────────────────────
-    hint_data     = None
-    zs_data       = None
-    baseline_data = None
+    # ── helpers ──────────────────────────────────────────────────────────────
+    def _load_json(p):
+        try:
+            return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+        except Exception:
+            return None
 
-    for path, store in [
-        (RESULTS_5EP_PATH,  "hint"),
-        (ZEROSHOT_PATH,     "zs"),
-        (BASELINES_PATH,    "base"),
-    ]:
-        if path.exists():
-            try:
-                parsed = json.loads(path.read_text(encoding="utf-8"))
-                if store == "hint":   hint_data     = parsed
-                elif store == "zs":   zs_data       = parsed
-                else:                 baseline_data = parsed
-            except Exception:
-                pass
+    hint_data     = _load_json(RESULTS_5EP_PATH)
+    zs_data       = _load_json(ZEROSHOT_PATH)
+    baseline_data = _load_json(BASELINES_PATH)
 
-    hint_sum = hint_data.get("summary", {}) if hint_data else {}
-    zs_sum   = zs_data.get("summary",   {}) if zs_data   else {}
+    hint_sum   = hint_data.get("summary", {})     if hint_data     else {}
+    zs_sum     = zs_data.get("summary",   {})     if zs_data       else {}
+    oracle_sum = {t: baseline_data[t]["rule"]  for t in TASKS if baseline_data and t in baseline_data}
 
-    # oracle / random from baselines.json (25 episodes each)
-    oracle_sum = {t: baseline_data[t]["rule"]   for t in TASKS if baseline_data and t in baseline_data} if baseline_data else {}
-    random_sum = {t: baseline_data[t]["random"] for t in TASKS if baseline_data and t in baseline_data} if baseline_data else {}
-
-    all_loaded = bool(hint_sum and zs_sum and oracle_sum)
-
-    if all_loaded:
-        st.success("All 4 policy results loaded — Oracle (25ep) | Hint-Guided (5ep) | Zero-Shot (1ep) | Random (25ep)")
-    elif hint_sum:
-        st.info("Hint-guided and baseline results loaded. Zero-shot results also available.")
-    else:
-        st.warning("No benchmark results found. Run the benchmarks first.")
-
-    st.divider()
-
-    # ── top-line metric cards ────────────────────────────────────────────────
-    st.subheader("Overall Average Success Rate")
-    def avg_sr(summary):
-        vals = [summary.get(t, {}).get("success_rate", 0.0) for t in TASKS]
+    # ── policy hero cards ────────────────────────────────────────────────────
+    def _avg(summary, key="success_rate"):
+        vals = [summary.get(t, {}).get(key, 0.0) for t in TASKS if summary.get(t)]
         return sum(vals) / len(vals) if vals else 0.0
 
-    m1, m2, m3, m4 = st.columns(4)
-    m1.markdown(
-        '<div style="background:#1a2a3a;border-top:4px solid #3498db;border-radius:6px;padding:14px;text-align:center">'
-        '<div style="font-size:2rem;font-weight:700;color:#3498db">100%</div>'
-        '<div style="color:#aaa;font-size:0.85rem">Oracle Baseline</div>'
-        '<div style="color:#666;font-size:0.75rem">25 episodes</div></div>',
+    h_avg_sr  = _avg(hint_sum,   "success_rate")
+    z_avg_sr  = _avg(zs_sum,     "success_rate")
+    h_avg_rw  = _avg(hint_sum,   "avg_reward")
+    z_avg_rw  = _avg(zs_sum,     "avg_reward")
+    h_avg_st  = _avg(hint_sum,   "avg_steps")
+    z_avg_st  = _avg(zs_sum,     "avg_steps")
+    o_avg_rw  = _avg(oracle_sum, "avg_reward")
+    o_avg_st  = _avg(oracle_sum, "avg_steps")
+
+    st.markdown("""
+<style>
+.policy-card { border-radius:10px; padding:20px 22px; margin-bottom:4px; }
+.policy-card .big { font-size:2.6rem; font-weight:800; line-height:1; }
+.policy-card .label { font-size:0.82rem; color:#aaa; margin-top:4px; }
+.policy-card .sub { font-size:0.75rem; color:#666; margin-top:2px; }
+.policy-card .stat { display:flex; gap:18px; margin-top:12px; }
+.policy-card .stat-item { text-align:center; }
+.policy-card .stat-item .val { font-size:1.1rem; font-weight:700; }
+.policy-card .stat-item .key { font-size:0.7rem; color:#777; }
+.metric-pill { display:inline-block; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:600; margin:2px; }
+</style>
+""", unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    c1.markdown(
+        f'<div class="policy-card" style="background:linear-gradient(135deg,#0d2137 0%,#1a3a5c 100%);border:1px solid #2a5080">'
+        f'<div class="big" style="color:#4ea8de">100%</div>'
+        f'<div class="label">Oracle Baseline</div>'
+        f'<div class="sub">Scripted deterministic agent &nbsp;|&nbsp; 25 episodes per task</div>'
+        f'<div class="stat">'
+        f'<div class="stat-item"><div class="val" style="color:#4ea8de">{o_avg_rw:.0f}</div><div class="key">Avg Reward</div></div>'
+        f'<div class="stat-item"><div class="val" style="color:#4ea8de">{o_avg_st:.1f}</div><div class="key">Avg Steps</div></div>'
+        f'<div class="stat-item"><div class="val" style="color:#4ea8de">6/6</div><div class="key">Tasks Solved</div></div>'
+        f'</div>'
+        f'<div style="margin-top:10px"><span class="metric-pill" style="background:#1a4060;color:#4ea8de">Upper Bound</span>'
+        f'<span class="metric-pill" style="background:#1a4060;color:#4ea8de">Proves Solvability</span></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-    h_avg = avg_sr(hint_sum)
-    m2.markdown(
-        f'<div style="background:#1a3a2a;border-top:4px solid #2ecc71;border-radius:6px;padding:14px;text-align:center">'
-        f'<div style="font-size:2rem;font-weight:700;color:#2ecc71">{h_avg:.0%}</div>'
-        f'<div style="color:#aaa;font-size:0.85rem">Hint-Guided LLM</div>'
-        f'<div style="color:#666;font-size:0.75rem">5 episodes · qwen2.5:3b</div></div>',
+    c2.markdown(
+        f'<div class="policy-card" style="background:linear-gradient(135deg,#0d2a1a 0%,#1a4a2a 100%);border:1px solid #2a6040">'
+        f'<div class="big" style="color:#2ecc71">{h_avg_sr:.0%}</div>'
+        f'<div class="label">Hint-Guided LLM</div>'
+        f'<div class="sub">qwen2.5:3b + workflow SOPs &nbsp;|&nbsp; 5 episodes per task</div>'
+        f'<div class="stat">'
+        f'<div class="stat-item"><div class="val" style="color:#2ecc71">{h_avg_rw:.0f}</div><div class="key">Avg Reward</div></div>'
+        f'<div class="stat-item"><div class="val" style="color:#2ecc71">{h_avg_st:.1f}</div><div class="key">Avg Steps</div></div>'
+        f'<div class="stat-item"><div class="val" style="color:#2ecc71">28/30</div><div class="key">Episodes Won</div></div>'
+        f'</div>'
+        f'<div style="margin-top:10px"><span class="metric-pill" style="background:#1a3a20;color:#2ecc71">Validates Task Design</span>'
+        f'<span class="metric-pill" style="background:#1a3a20;color:#2ecc71">RAG Analogy</span></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-    z_avg = avg_sr(zs_sum)
-    m3.markdown(
-        f'<div style="background:#2a1a0a;border-top:4px solid #e67e22;border-radius:6px;padding:14px;text-align:center">'
-        f'<div style="font-size:2rem;font-weight:700;color:#e67e22">{z_avg:.0%}</div>'
-        f'<div style="color:#aaa;font-size:0.85rem">Zero-Shot LLM</div>'
-        f'<div style="color:#666;font-size:0.75rem">1 episode · qwen2.5:3b</div></div>',
+    c3.markdown(
+        f'<div class="policy-card" style="background:linear-gradient(135deg,#2a0d0d 0%,#4a1a1a 100%);border:1px solid #6a2020">'
+        f'<div class="big" style="color:#e74c3c">{z_avg_sr:.0%}</div>'
+        f'<div class="label">Zero-Shot LLM</div>'
+        f'<div class="sub">qwen2.5:3b, no hints &nbsp;|&nbsp; 1 episode per task</div>'
+        f'<div class="stat">'
+        f'<div class="stat-item"><div class="val" style="color:#e74c3c">{z_avg_rw:.1f}</div><div class="key">Avg Reward</div></div>'
+        f'<div class="stat-item"><div class="val" style="color:#e74c3c">{z_avg_st:.1f}</div><div class="key">Avg Steps</div></div>'
+        f'<div class="stat-item"><div class="val" style="color:#e74c3c">0/6</div><div class="key">Tasks Solved</div></div>'
+        f'</div>'
+        f'<div style="margin-top:10px"><span class="metric-pill" style="background:#3a1010;color:#e74c3c">Measures Gap</span>'
+        f'<span class="metric-pill" style="background:#3a1010;color:#e74c3c">Future RL Target</span></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-    m4.markdown(
-        '<div style="background:#2a1a1a;border-top:4px solid #e74c3c;border-radius:6px;padding:14px;text-align:center">'
-        '<div style="font-size:2rem;font-weight:700;color:#e74c3c">0%</div>'
-        '<div style="color:#aaa;font-size:0.85rem">Random Baseline</div>'
-        '<div style="color:#666;font-size:0.75rem">25 episodes</div></div>',
-        unsafe_allow_html=True,
-    )
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    # ── chart builder helpers ────────────────────────────────────────────────
+    POLICY_COLORS = {"Oracle": "#4ea8de", "Hint-Guided": "#2ecc71", "Zero-Shot": "#e74c3c"}
+    TASK_SHORT    = ["Customer\nIncident","Product\nLaunch","Meeting\nConflict",
+                     "Launch\nReadiness","Budget\nApproval","Vendor\nOnboarding"]
+
+    def _grouped_bar_svg(series_3, values_3, chart_h=260, bar_w=48, bar_gap=8, grp_pad=24, show_pct=True, y_max=None, y_label=""):
+        """series_3: list of (name, color), values_3: list of 6-element lists."""
+        n_pol   = len(series_3)
+        grp_w   = n_pol * (bar_w + bar_gap) - bar_gap + grp_pad
+        svg_w   = 72 + len(TASKS) * grp_w
+        lbl_h   = 44
+        leg_h   = 28
+        total_h = chart_h + lbl_h + leg_h + 8
+        max_val = y_max or max((max(v) for v in values_3), default=1)
+        if max_val == 0: max_val = 1
+
+        p = []
+        # defs gradient
+        p.append("<defs>")
+        for sname, scolor in series_3:
+            gid = sname.replace("-","").replace(" ","")
+            p.append(f'<linearGradient id="g{gid}" x1="0" y1="0" x2="0" y2="1">'
+                     f'<stop offset="0%" stop-color="{scolor}" stop-opacity="1"/>'
+                     f'<stop offset="100%" stop-color="{scolor}" stop-opacity="0.6"/>'
+                     f'</linearGradient>')
+        p.append("</defs>")
+
+        # grid
+        for pct in [25, 50, 75, 100]:
+            yg = chart_h - (pct / 100) * chart_h
+            p.append(f'<line x1="68" y1="{yg:.0f}" x2="{svg_w-4}" y2="{yg:.0f}" stroke="#222" stroke-width="1" stroke-dasharray="5,4"/>')
+            label_val = f"{pct}%" if show_pct else f"{int(pct * max_val / 100)}"
+            p.append(f'<text x="64" y="{yg+4:.0f}" fill="#555" font-size="9" text-anchor="end">{label_val}</text>')
+        p.append(f'<line x1="68" y1="{chart_h}" x2="{svg_w-4}" y2="{chart_h}" stroke="#333" stroke-width="1"/>')
+        if y_label:
+            p.append(f'<text x="10" y="{chart_h//2}" fill="#555" font-size="9" text-anchor="middle" transform="rotate(-90,10,{chart_h//2})">{y_label}</text>')
+
+        for ti in range(len(TASKS)):
+            gx  = 72 + ti * grp_w
+            lbl = TASK_SHORT[ti]
+            lx  = gx + (n_pol * (bar_w + bar_gap) - bar_gap) / 2
+            for li, line in enumerate(lbl.split("\n")):
+                p.append(f'<text x="{lx:.0f}" y="{chart_h + 16 + li*13}" fill="#aaa" font-size="10" text-anchor="middle">{line}</text>')
+
+            for bi, ((sname, scolor), vals) in enumerate(zip(series_3, values_3)):
+                bx  = gx + bi * (bar_w + bar_gap)
+                val = max(vals[ti], 0)
+                bh  = (val / max_val) * chart_h
+                by  = chart_h - bh
+                gid = sname.replace("-","").replace(" ","")
+                p.append(f'<rect x="{bx}" y="{by:.1f}" width="{bar_w}" height="{max(bh,1.5):.1f}" fill="url(#g{gid})" rx="3"/>')
+                if bh > 18:
+                    lbl_v = f"{int(val*100)}%" if show_pct else f"{val:.1f}"
+                    p.append(f'<text x="{bx+bar_w/2:.0f}" y="{by+bh/2+4:.0f}" fill="#fff" font-size="9" font-weight="700" text-anchor="middle">{lbl_v}</text>')
+                elif val > 0:
+                    lbl_v = f"{int(val*100)}%" if show_pct else f"{val:.1f}"
+                    p.append(f'<text x="{bx+bar_w/2:.0f}" y="{by-3:.0f}" fill="{scolor}" font-size="8" text-anchor="middle">{lbl_v}</text>')
+
+        # legend
+        leg_y = chart_h + lbl_h + 4
+        for bi, (sname, scolor) in enumerate(series_3):
+            lx = 72 + bi * 190
+            p.append(f'<rect x="{lx}" y="{leg_y}" width="12" height="12" fill="{scolor}" rx="2"/>')
+            p.append(f'<text x="{lx+17}" y="{leg_y+10}" fill="#bbb" font-size="11">{sname}</text>')
+
+        return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {svg_w} {total_h}" '
+                f'style="background:#0e1117;border-radius:10px;width:100%;border:1px solid #1e1e2e">'
+                + "".join(p) + "</svg>")
+
+    # ── chart 1: success rate ────────────────────────────────────────────────
+    st.markdown("### Success Rate by Task")
+    st.caption("Percentage of episodes where all subgoals were completed within the horizon.")
+    series3 = [("Oracle","#4ea8de"), ("Hint-Guided","#2ecc71"), ("Zero-Shot","#e74c3c")]
+    o_sr = [oracle_sum.get(t,{}).get("success_rate",1.0) for t in TASKS]
+    h_sr = [hint_sum.get(t,  {}).get("success_rate",0.0) for t in TASKS]
+    z_sr = [zs_sum.get(t,    {}).get("success_rate",0.0) for t in TASKS]
+    st.markdown(_grouped_bar_svg(series3, [o_sr, h_sr, z_sr], chart_h=240), unsafe_allow_html=True)
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── chart 2: average reward ──────────────────────────────────────────────
+    st.markdown("### Average Episode Reward")
+    st.caption("Shaped reward including subgoal progress (+8/N each), coordination bonuses (+2), terminal success (+75), and step penalties.")
+    o_rw = [oracle_sum.get(t,{}).get("avg_reward",0.0) for t in TASKS]
+    h_rw = [hint_sum.get(t,  {}).get("avg_reward",0.0) for t in TASKS]
+    z_rw = [max(zs_sum.get(t,{}).get("avg_reward",0.0), 0) for t in TASKS]
+    max_rw = max(max(o_rw+h_rw+z_rw), 1)
+    st.markdown(_grouped_bar_svg(series3, [o_rw, h_rw, z_rw], chart_h=200, show_pct=False, y_max=max_rw, y_label="Reward"), unsafe_allow_html=True)
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── chart 3: steps to solve ──────────────────────────────────────────────
+    st.markdown("### Average Steps per Episode")
+    st.caption("Oracle steps show minimum possible. Hint-guided matches closely. Zero-shot steps are wasted before failure.")
+    o_st = [oracle_sum.get(t,{}).get("avg_steps",0.0) for t in TASKS]
+    h_st = [hint_sum.get(t,  {}).get("avg_steps",0.0) for t in TASKS]
+    z_st = [zs_sum.get(t,    {}).get("avg_steps",0.0) for t in TASKS]
+    max_st = max(max(o_st+h_st+z_st), 1)
+    st.markdown(_grouped_bar_svg(series3, [o_st, h_st, z_st], chart_h=180, show_pct=False, y_max=max_st, y_label="Steps"), unsafe_allow_html=True)
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── chart 4: task progress (zero-shot only meaningful here) ─────────────
+    st.markdown("### Average Task Progress (% subgoals reached)")
+    st.caption("Shows how far each policy gets even without full completion. Oracle and Hint-Guided reach 100%. Zero-shot stalls early.")
+    o_pr = [oracle_sum.get(t,{}).get("avg_progress",1.0) for t in TASKS]
+    h_pr = [hint_sum.get(t,  {}).get("avg_progress",0.0) for t in TASKS]
+    z_pr = [zs_sum.get(t,    {}).get("avg_progress",0.0) for t in TASKS]
+    st.markdown(_grouped_bar_svg(series3, [o_pr, h_pr, z_pr], chart_h=180), unsafe_allow_html=True)
 
     st.divider()
 
-    # ── grouped bar chart — all 4 policies ──────────────────────────────────
-    st.subheader("Success Rate by Task — All 4 Policies")
+    # ── per-task deep dive cards ─────────────────────────────────────────────
+    st.markdown("### Per-Task Deep Dive")
+    st.caption("Click each task to expand full stats for all three policies.")
 
-    oracle_sr = [oracle_sum.get(t, {}).get("success_rate", 1.0) for t in TASKS]
-    hint_sr   = [hint_sum.get(t,   {}).get("success_rate", 0.0) for t in TASKS]
-    zs_sr     = [zs_sum.get(t,     {}).get("success_rate", 0.0) for t in TASKS]
-    random_sr = [random_sum.get(t, {}).get("success_rate", 0.0) for t in TASKS]
-
-    series_all = [
-        ("Oracle",          oracle_sr, "#3498db"),
-        ("Hint-Guided",     hint_sr,   "#2ecc71"),
-        ("Zero-Shot",       zs_sr,     "#e67e22"),
-        ("Random",          random_sr, "#e74c3c"),
-    ]
-
-    bar_w     = 46
-    bar_gap   = 8
-    group_pad = 28
-    group_w   = 4 * (bar_w + bar_gap) - bar_gap + group_pad
-    chart_w   = 70 + len(TASKS) * group_w
-    chart_h   = 280
-    label_h   = 44
-    legend_h  = 36
-    total_h   = chart_h + label_h + legend_h + 10
-
-    parts = []
-    # y-axis grid
-    for pct in [25, 50, 75, 100]:
-        y = chart_h - (pct / 100) * chart_h
-        parts.append(f'<line x1="65" y1="{y:.0f}" x2="{chart_w}" y2="{y:.0f}" stroke="#2a2a2a" stroke-width="1" stroke-dasharray="5,4"/>')
-        parts.append(f'<text x="60" y="{y + 4:.0f}" fill="#666" font-size="10" text-anchor="end">{pct}%</text>')
-    # baseline at 0
-    parts.append(f'<line x1="65" y1="{chart_h}" x2="{chart_w}" y2="{chart_h}" stroke="#444" stroke-width="1"/>')
-
-    for ti, task in enumerate(TASKS):
-        gx    = 70 + ti * group_w
-        label = task.replace("_", " ").title().replace(" ", "\n")
-        # split long labels
-        words = task.replace("_", " ").title().split()
-        if len(words) > 1:
-            mid = len(words) // 2
-            line1 = " ".join(words[:mid])
-            line2 = " ".join(words[mid:])
-            lx = gx + (4 * (bar_w + bar_gap) - bar_gap) / 2
-            parts.append(f'<text x="{lx:.0f}" y="{chart_h + 16}" fill="#bbb" font-size="10" text-anchor="middle">{line1}</text>')
-            parts.append(f'<text x="{lx:.0f}" y="{chart_h + 28}" fill="#bbb" font-size="10" text-anchor="middle">{line2}</text>')
-        else:
-            lx = gx + (4 * (bar_w + bar_gap) - bar_gap) / 2
-            parts.append(f'<text x="{lx:.0f}" y="{chart_h + 20}" fill="#bbb" font-size="10" text-anchor="middle">{words[0]}</text>')
-
-        for bi, (sname, sdata, color) in enumerate(series_all):
-            bx  = gx + bi * (bar_w + bar_gap)
-            val = sdata[ti] if sdata[ti] is not None else 0.0
-            bh  = val * chart_h
-            by  = chart_h - bh
-            # bar
-            parts.append(f'<rect x="{bx}" y="{by:.1f}" width="{bar_w}" height="{max(bh, 1):.1f}" fill="{color}" rx="3" opacity="0.9"/>')
-            # label inside/above bar
-            if val >= 0.12:
-                ty = by + bh / 2 + 4
-                parts.append(f'<text x="{bx + bar_w/2:.0f}" y="{ty:.0f}" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">{int(val*100)}%</text>')
-            elif val > 0:
-                parts.append(f'<text x="{bx + bar_w/2:.0f}" y="{by - 3:.0f}" fill="{color}" font-size="9" text-anchor="middle">{int(val*100)}%</text>')
-
-    # legend
-    leg_y = chart_h + label_h + 8
-    for bi, (sname, _, color) in enumerate(series_all):
-        lx = 70 + bi * 180
-        parts.append(f'<rect x="{lx}" y="{leg_y}" width="12" height="12" fill="{color}" rx="2"/>')
-        parts.append(f'<text x="{lx + 17}" y="{leg_y + 10}" fill="#ccc" font-size="11">{sname}</text>')
-
-    bar_svg = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {chart_w} {total_h}" '
-        f'style="background:#0e1117;border-radius:8px;width:100%;border:1px solid #222">'
-        + "".join(parts) + "</svg>"
-    )
-    st.markdown(bar_svg, unsafe_allow_html=True)
-
-    st.divider()
-
-    # ── reward comparison chart ──────────────────────────────────────────────
-    st.subheader("Average Reward by Task — Oracle vs Hint-Guided vs Zero-Shot")
-
-    oracle_rw = [oracle_sum.get(t, {}).get("avg_reward", 0.0) for t in TASKS]
-    hint_rw   = [hint_sum.get(t,   {}).get("avg_reward", 0.0) for t in TASKS]
-    zs_rw     = [zs_sum.get(t,     {}).get("avg_reward", 0.0) for t in TASKS]
-    max_rw    = max(max(oracle_rw + hint_rw + zs_rw), 1)
-
-    rw_series = [
-        ("Oracle",      oracle_rw, "#3498db"),
-        ("Hint-Guided", hint_rw,   "#2ecc71"),
-        ("Zero-Shot",   zs_rw,     "#e67e22"),
-    ]
-    rw_bar_w   = 56
-    rw_bar_gap = 10
-    rw_grp_pad = 30
-    rw_grp_w   = 3 * (rw_bar_w + rw_bar_gap) - rw_bar_gap + rw_grp_pad
-    rw_chart_w = 70 + len(TASKS) * rw_grp_w
-    rw_chart_h = 200
-    rw_total_h = rw_chart_h + 60 + 30
-
-    rw_parts = []
-    for pct in [25, 50, 75, 100]:
-        y = rw_chart_h - (pct / 100) * rw_chart_h
-        rw_parts.append(f'<line x1="65" y1="{y:.0f}" x2="{rw_chart_w}" y2="{y:.0f}" stroke="#2a2a2a" stroke-dasharray="4,4"/>')
-        rw_parts.append(f'<text x="60" y="{y+4:.0f}" fill="#666" font-size="9" text-anchor="end">{int(pct * max_rw / 100)}</text>')
-    rw_parts.append(f'<line x1="65" y1="{rw_chart_h}" x2="{rw_chart_w}" y2="{rw_chart_h}" stroke="#444"/>')
-
-    for ti, task in enumerate(TASKS):
-        gx    = 70 + ti * rw_grp_w
-        words = task.replace("_", " ").title().split()
-        mid   = len(words) // 2
-        lx    = gx + (3 * (rw_bar_w + rw_bar_gap) - rw_bar_gap) / 2
-        rw_parts.append(f'<text x="{lx:.0f}" y="{rw_chart_h + 14}" fill="#bbb" font-size="9" text-anchor="middle">{" ".join(words[:mid])}</text>')
-        rw_parts.append(f'<text x="{lx:.0f}" y="{rw_chart_h + 25}" fill="#bbb" font-size="9" text-anchor="middle">{" ".join(words[mid:])}</text>')
-
-        for bi, (sname, sdata, color) in enumerate(rw_series):
-            bx  = gx + bi * (rw_bar_w + rw_bar_gap)
-            val = max(sdata[ti], 0)
-            bh  = (val / max_rw) * rw_chart_h
-            by  = rw_chart_h - bh
-            rw_parts.append(f'<rect x="{bx}" y="{by:.1f}" width="{rw_bar_w}" height="{max(bh,1):.1f}" fill="{color}" rx="3" opacity="0.85"/>')
-            if val > max_rw * 0.08:
-                rw_parts.append(f'<text x="{bx + rw_bar_w/2:.0f}" y="{by + bh/2 + 4:.0f}" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">{val:.0f}</text>')
-
-    leg_y2 = rw_chart_h + 44
-    for bi, (sname, _, color) in enumerate(rw_series):
-        lx = 70 + bi * 200
-        rw_parts.append(f'<rect x="{lx}" y="{leg_y2}" width="12" height="12" fill="{color}" rx="2"/>')
-        rw_parts.append(f'<text x="{lx+17}" y="{leg_y2+10}" fill="#ccc" font-size="11">{sname}</text>')
-
-    rw_svg = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {rw_chart_w} {rw_total_h}" '
-        f'style="background:#0e1117;border-radius:8px;width:100%;border:1px solid #222">'
-        + "".join(rw_parts) + "</svg>"
-    )
-    st.markdown(rw_svg, unsafe_allow_html=True)
-
-    st.divider()
-
-    # ── detailed comparison table ────────────────────────────────────────────
-    st.subheader("Full Results Table")
-    rows = []
-    for task in TASKS:
-        o  = oracle_sum.get(task, {})
-        h  = hint_sum.get(task, {})
-        z  = zs_sum.get(task, {})
-        r  = random_sum.get(task, {})
-        h_sr = h.get("success_rate", 0.0)
-        z_sr = z.get("success_rate", 0.0)
-        rows.append({
-            "Task":                  task.replace("_", " ").title(),
-            "Oracle SR":             f"{o.get('success_rate', 1.0):.0%}",
-            "Oracle Reward":         f"{o.get('avg_reward', 0):.1f}",
-            "Hint-Guided SR":        f"{h_sr:.0%}",
-            "Hint-Guided Reward":    f"{h.get('avg_reward', 0):.1f}",
-            "Hint-Guided Steps":     f"{h.get('avg_steps', 0):.1f}",
-            "Zero-Shot SR":          f"{z_sr:.0%}",
-            "Zero-Shot Reward":      f"{z.get('avg_reward', 0):.1f}",
-            "Zero-Shot Progress":    f"{z.get('avg_progress', 0):.0%}",
-            "Gap (H vs Z)":          f"+{(h_sr - z_sr)*100:.0f}pp",
-            "Random SR":             f"{r.get('success_rate', 0):.0%}",
-        })
-    st.dataframe(rows, use_container_width=True)
-
-    st.divider()
-
-    # ── zero-shot failure analysis ───────────────────────────────────────────
-    st.subheader("Zero-Shot Failure Analysis")
-
-    failure_data = {
-        "customer_incident":  {"primary": "Looping + Policy Failure",    "detail": "Re-reads same email 4x. Generates cyclic no-progress actions. Fails after 9 steps at 25% progress."},
-        "product_launch":     {"primary": "Permission Violation",         "detail": "Calls jira.change_status for product_01 who lacks that permission. Fails after 3 steps at 14% progress."},
-        "meeting_conflict":   {"primary": "Looping + Constraint Violation","detail": "Loops 19 times, hits 3 constraint violations, times out at max steps (25) with only 40% progress."},
-        "launch_readiness":   {"primary": "Looping + Policy Failure",    "detail": "Reads same resource twice immediately. Fails after just 2 steps at 12% progress."},
-        "budget_approval":    {"primary": "Looping + Policy Failure",    "detail": "Loops 3 times on same actions. Fails after 8 steps at 14% progress."},
-        "vendor_onboarding":  {"primary": "Looping + Policy Failure",    "detail": "Loops on discovery actions. Cannot find VEND-401 without hints. Fails after 11 steps at 25% progress."},
+    ZS_FAILURES = {
+        "customer_incident":  ("Looping + Policy Error",     "Re-reads email 4x, generates cyclic actions. Halts at 9 steps, 25% progress. Failure: no workflow order known."),
+        "product_launch":     ("Permission Violation",        "Calls jira.change_status for product_01 — role not permitted. Halts at 3 steps, 14% progress."),
+        "meeting_conflict":   ("Constraint Loop + Timeout",   "19 repeated actions, 3 constraint violations, hits step limit (25) at 40% progress without resolving conflict."),
+        "launch_readiness":   ("Immediate Looping",           "Re-reads same resource on step 2. Policy error halts run at 2 steps, 12% progress."),
+        "budget_approval":    ("Looping + Policy Error",     "3-action loop on budget discovery. Halts at 8 steps, 14% progress. Cannot discover correct Jira IDs."),
+        "vendor_onboarding":  ("Looping + Policy Error",     "Cannot discover VEND-401 without hints. Loops on search actions. Halts at 11 steps, 25% progress."),
     }
 
-    fail_cols = st.columns(2)
-    for i, task in enumerate(TASKS):
-        fd = failure_data.get(task, {})
+    for task in TASKS:
         meta_t = TASK_META.get(task, {})
-        with fail_cols[i % 2]:
+        o = oracle_sum.get(task, {})
+        h = hint_sum.get(task, {})
+        z = zs_sum.get(task, {})
+        h_sr_v = h.get("success_rate", 0.0)
+        z_sr_v = z.get("success_rate", 0.0)
+        gap_v  = (h_sr_v - z_sr_v) * 100
+        zf_primary, zf_detail = ZS_FAILURES.get(task, ("—", "—"))
+        h_ci   = h.get("success_rate_95ci", [0,1])
+
+        with st.expander(f"{meta_t.get('icon','')}  {task.replace('_',' ').title()}   —   Oracle 100%  |  Hint-Guided {h_sr_v:.0%}  |  Zero-Shot {z_sr_v:.0%}  |  Gap +{gap_v:.0f}pp"):
+            col_o, col_h, col_z = st.columns(3)
+
+            with col_o:
+                st.markdown(
+                    '<div style="background:#0d2137;border-radius:8px;padding:14px;border:1px solid #1a3a5c">'
+                    '<div style="font-size:0.78rem;color:#4ea8de;font-weight:700;letter-spacing:0.08em;margin-bottom:8px">ORACLE</div>',
+                    unsafe_allow_html=True,
+                )
+                st.metric("Success Rate", f"{o.get('success_rate',1.0):.0%}")
+                st.metric("Avg Reward",   f"{o.get('avg_reward',0):.1f}")
+                st.metric("Avg Steps",    f"{o.get('avg_steps',0):.1f}")
+                st.metric("Episodes",     f"{o.get('episodes',25)}")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            with col_h:
+                st.markdown(
+                    '<div style="background:#0d2a1a;border-radius:8px;padding:14px;border:1px solid #1a4a2a">'
+                    '<div style="font-size:0.78rem;color:#2ecc71;font-weight:700;letter-spacing:0.08em;margin-bottom:8px">HINT-GUIDED LLM</div>',
+                    unsafe_allow_html=True,
+                )
+                st.metric("Success Rate", f"{h_sr_v:.0%}")
+                st.metric("Avg Reward",   f"{h.get('avg_reward',0):.1f}", f"±{h.get('reward_std',0):.1f}")
+                st.metric("Avg Steps",    f"{h.get('avg_steps',0):.1f}")
+                st.metric("95% CI",       f"[{h_ci[0]:.2f}, {h_ci[1]:.2f}]")
+                st.metric("Policy Errors",f"{h.get('policy_error_rate',0):.0%}")
+                st.metric("LLM Calls",    f"{h.get('llm_calls',0)}")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            with col_z:
+                st.markdown(
+                    '<div style="background:#2a0d0d;border-radius:8px;padding:14px;border:1px solid #5a1a1a">'
+                    '<div style="font-size:0.78rem;color:#e74c3c;font-weight:700;letter-spacing:0.08em;margin-bottom:8px">ZERO-SHOT LLM</div>',
+                    unsafe_allow_html=True,
+                )
+                st.metric("Success Rate",   f"{z_sr_v:.0%}")
+                st.metric("Avg Reward",     f"{z.get('avg_reward',0):.1f}")
+                st.metric("Progress",       f"{z.get('avg_progress',0):.0%}")
+                st.metric("Steps Taken",    f"{z.get('avg_steps',0):.0f}")
+                st.metric("Repeated Acts",  f"{z.get('avg_repeated_actions',0):.0f}")
+                st.metric("Constraint Viol",f"{z.get('avg_constraint_violations',0):.0f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+
             st.markdown(
-                f'<div style="border:1px solid #333;border-radius:6px;padding:12px;margin-bottom:8px;background:#0e1117">'
-                f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-                f'<span>{meta_t.get("icon","")}</span>'
-                f'<strong style="font-size:0.9rem">{task.replace("_"," ").title()}</strong>'
-                f'<span style="margin-left:auto;background:#e74c3c;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.72rem">{fd.get("primary","—")}</span>'
-                f'</div>'
-                f'<p style="color:#999;font-size:0.82rem;margin:0">{fd.get("detail","")}</p>'
+                f'<div style="margin-top:10px;background:#1a0a0a;border-left:3px solid #e74c3c;border-radius:4px;padding:10px 14px">'
+                f'<span style="color:#e74c3c;font-size:0.78rem;font-weight:700">ZERO-SHOT FAILURE: {zf_primary}</span><br>'
+                f'<span style="color:#aaa;font-size:0.82rem">{zf_detail}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
 
     st.divider()
 
+    # ── summary comparison table ─────────────────────────────────────────────
+    st.markdown("### Full Comparison Table")
+    tbl_rows = []
+    for task in TASKS:
+        o = oracle_sum.get(task, {})
+        h = hint_sum.get(task, {})
+        z = zs_sum.get(task, {})
+        tbl_rows.append({
+            "Task":              task.replace("_"," ").title(),
+            "Oracle SR":         f"{o.get('success_rate',1.0):.0%}",
+            "Oracle Reward":     f"{o.get('avg_reward',0):.1f}",
+            "Oracle Steps":      f"{o.get('avg_steps',0):.1f}",
+            "Hint SR":           f"{h.get('success_rate',0):.0%}",
+            "Hint Reward":       f"{h.get('avg_reward',0):.1f}",
+            "Hint Steps":        f"{h.get('avg_steps',0):.1f}",
+            "Hint 95% CI":       "[{:.2f},{:.2f}]".format(*h.get("success_rate_95ci",[0,1])),
+            "ZS SR":             f"{z.get('success_rate',0):.0%}",
+            "ZS Reward":         f"{z.get('avg_reward',0):.1f}",
+            "ZS Progress":       f"{z.get('avg_progress',0):.0%}",
+            "ZS Repeated":       f"{z.get('avg_repeated_actions',0):.0f}",
+            "Gap (H-ZS)":        f"+{(h.get('success_rate',0)-z.get('success_rate',0))*100:.0f}pp",
+        })
+    st.dataframe(tbl_rows, use_container_width=True)
+
+    st.divider()
+
     # ── research narrative ────────────────────────────────────────────────────
-    st.subheader("Why Does the Gap Exist?")
-    st.markdown("""
-**The +93pp average gap between Hint-Guided and Zero-Shot directly measures the value of structured workflow knowledge in enterprise settings.**
+    st.markdown("### Why the +93pp Gap Exists")
 
----
+    ga, gb = st.columns([1, 1])
+    with ga:
+        st.markdown("""
+**Three structural reasons zero-shot fails on enterprise tasks:**
 
-#### The 3 root causes of zero-shot failure
-
-| Root Cause | What happens | Why hints fix it |
-|---|---|---|
-| **Unknown action order** | Agent doesn't know DAG dependency sequence — tries shortcuts that the verifier rejects | Hints provide the exact subgoal sequence |
-| **Unknown parameter values** | Concrete IDs like `VEND-401` must be discovered, not guessed — model fabricates wrong values | Hints provide the discovery path (read email → find ticket) |
-| **Looping without a map** | Without a workflow map, model re-reads same resources and burns step budget on −1.0 redundancy penalties | Hints prevent revisiting completed steps |
-
----
-
-#### The RAG / SOP analogy
-
-In real Fortune 500 enterprises, employees don't start from zero every morning.
-They follow **Standard Operating Procedures (SOPs)**, runbooks, and onboarding docs.
-
-**Hint-guided LLM = onboarded employee with access to company documentation.**
-**Zero-shot LLM = contractor on day 1 with no briefing.**
-
-This is exactly what **Retrieval-Augmented Generation (RAG)** does for enterprise AI —
-it injects the right context at the right time (Lewis et al., 2020).
-
----
-
-#### What comes next: closing the gap autonomously
-
-The gap is not a flaw — it is the **research agenda**:
-
-| Approach | How it closes the gap |
+| Root Cause | Evidence |
 |---|---|
-| **Behavioral Cloning** | Train on hint-guided trajectories — agent learns the SOP implicitly |
-| **PPO / Policy Gradient** | Optimize directly against the shaped reward (+75 terminal, +8/N subgoal) |
-| **QMIX / VDN** | Centralized training + decentralized execution — agents learn coordination |
-| **LLM Fine-tuning** | SFT on successful episodes, RLHF/RLAIF on failures |
+| No knowledge of action order | All tasks stall in first 2–11 steps |
+| Cannot discover concrete IDs | product_launch: calls wrong tool; vendor_onboarding: never finds VEND-401 |
+| Looping without a workflow map | meeting_conflict: 19 repeated actions before timeout |
 
-The environment infrastructure — reward function, subgoal verifiers, ScenarioFactory —
-is deliberately built to support all four without any modification.
+**Hint-guided = RAG over enterprise SOPs.**
+In real companies, employees follow runbooks, not first principles.
+The +93pp gap *is* the value of that documentation.
+""")
+    with gb:
+        st.markdown("""
+**What each policy proves:**
+
+- **Oracle 100%** — every task is mechanically solvable; reward function fires correctly
+- **Hint-Guided 93%** — task design is sound; 2 failures are model bugs, not task bugs
+- **Zero-Shot 0%** — enterprise procedural knowledge cannot be inferred from context alone
+
+**Future work to close the gap:**
+- Behavioral Cloning on hint-guided trajectories
+- PPO / QMIX against the shaped reward
+- LLM fine-tuning (SFT + RLHF on failures)
 """)
 
-    st.info(
-        "**Key finding for Wedecode:** The 4-tier taxonomy cleanly separates "
-        "*task design quality* (Oracle proves solvability) from *agent capability* (Zero-Shot shows the gap). "
-        "A +93pp gap with a 3B local model is the strongest possible case for why "
-        "enterprise AI needs workflow context injection — and why this benchmark platform has research value."
+    st.markdown(
+        '<div style="background:linear-gradient(90deg,#0d2137,#0d2a1a);border-radius:8px;padding:16px 20px;border:1px solid #2a4040;margin-top:8px">'
+        '<span style="color:#aaa;font-size:0.88rem">'
+        '<strong style="color:#fff">Key finding for Wedecode:</strong> '
+        'The benchmark cleanly separates <em>task design quality</em> (Oracle proves solvability) '
+        'from <em>autonomous agent capability</em> (Zero-Shot reveals the gap). '
+        'A +93pp gap with a 3B local model is direct evidence for why enterprise AI needs '
+        'structured workflow context injection — and exactly the research problem this benchmark is built to measure.'
+        '</span></div>',
+        unsafe_allow_html=True,
     )
 
 
