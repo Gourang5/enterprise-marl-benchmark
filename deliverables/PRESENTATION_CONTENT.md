@@ -10,7 +10,7 @@ across employees, applications, permissions, and time. The benchmark tests wheth
 agents can discover information, coordinate, respect permissions, and reach a
 verifiable business outcome.
 
-Key stats: **5 agents · 5 apps · 6 tasks · 34 tests pass · 0 flaky**
+Key stats: **5 agents · 5 apps · 6 tasks · 64 tests pass · 0 flaky**
 
 ### Slide 2 — One persistent company world
 One synthetic Fortune 500 company is exposed through five thin application simulators:
@@ -157,7 +157,7 @@ ScenarioFactory → difficulty-specific distractor injection → train/dev/test 
 3. **QMIX / VDN** — CTDE paradigm (centralized training, decentralized execution)
 4. **LLM Fine-tuning** — SFT on successful episodes → RLHF
 
-The environment infrastructure supports all four without modification.
+The environment infrastructure supports all four policy paradigms without modification.
 
 ---
 

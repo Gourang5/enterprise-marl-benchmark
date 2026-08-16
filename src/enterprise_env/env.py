@@ -20,11 +20,13 @@ class EnterpriseEnv:
     ``step()`` returns two levels of info:
     - Agent-facing keys (``success``, ``message``, ``step``) — safe to expose to policies.
     - Evaluator keys under ``info["eval"]`` (``progress``, ``subgoals``, ``reward_components``)
-      — for benchmarking/logging only. RL policies must not condition on these.
+      — privileged evaluator data for benchmarking/logging only.  RL policies trained on
+      this environment MUST NOT condition on ``info["eval"]``; the PettingZoo adapter
+      (``EnterpriseAECEnv``) strips it automatically.
 
-    Set ``config.strict_turns = True`` to enforce that ``action.agent_id`` must match
-    ``agent_selection``; the oracle/debug baselines run with ``strict_turns = False``
-    (the default) to allow free agent scheduling.
+    Set ``config.strict_turns = True`` (``EnvConfig`` field, default ``False``) to enforce
+    that ``action.agent_id`` must match ``agent_selection``.  Oracle/scripted baselines use
+    the default ``False`` to allow free agent scheduling.
     """
 
     AGENTS = ("pm_01", "eng_01", "product_01", "mgr_01", "cs_01")

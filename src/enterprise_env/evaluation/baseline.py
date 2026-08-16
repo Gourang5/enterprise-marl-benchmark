@@ -30,7 +30,7 @@ class ProductLaunchBaseline(ScriptedPolicy):
             Action("product_01","jira","read_issue",{"issue_id":"LAUNCH-101"}),
             Action("product_01","jira","assign_issue",{"issue_id":"LAUNCH-101","assignee_id":"eng_01"}),
             Action("eng_01","jira","add_comment",{"issue_id":"LAUNCH-101","comment":"Validated payment retry telemetry; metrics and alerts are healthy."}),
-            Action("mgr_01","jira","add_comment",{"issue_id":"LAUNCH-101","comment":"Approved for go/no-go review from engineering management."}),
+            Action("mgr_01","jira","add_comment",{"issue_id":"LAUNCH-101","comment":"Approved — engineering validation and management sign-off are confirmed for the launch review."}),
             Action("product_01","slack","send_message",{"channel_id":"CH-PRODUCT","text":"LAUNCH-101 go/no-go: validation complete and manager approval recorded.","mentions":["eng_01","mgr_01"]}),
             Action("product_01","calendar","create_event",{"event_id":"LAUNCH-REVIEW","title":"Marketplace Checkout Go/No-Go","participants":["eng_01","mgr_01"],"start_time":840,"end_time":900}),
             Action("mgr_01","jira","change_status",{"issue_id":"LAUNCH-101","status":"resolved"}),

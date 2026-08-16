@@ -157,7 +157,9 @@ A successful action with no state/progress change receives the redundant-action 
 - reference only valid dependency nodes,
 - contain an acyclic subgoal graph.
 
-Generate sample splits with `python scripts/generate_dataset.py --output generated_scenarios --train 100 --dev 20 --test 50 --difficulty hard`. The remaining future extension is deeper parameterization of org topology and DAG shape, not the basic factory plumbing.
+Generate sample splits with `python scripts/generate_dataset.py --output generated_scenarios --train 100 --dev 20 --test 50 --difficulty hard`.
+
+**Scope note:** The current factory generates reproducible scenario variants across distractor density and seed. Entity IDs (`INC-421`, `LAUNCH-101`, etc.), agent names, org topology, and DAG structure are fixed per task family — train/dev/test splits are seed-disjoint but not entity-disjoint. Entity-disjoint OOD splits and org/DAG-level variation are planned extensions and are outside the scope of this version.
 
 ## Design principles
 
@@ -228,7 +230,7 @@ See `RUN_WINDOWS_FREE_LLM.md` for the complete Windows/VS Code step-by-step guid
 
 ## Final validation
 
-The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **34 automated tests** (including negation-hardening tests for all task verifiers), 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
+The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **64 automated tests** (including negation-hardening tests covering both pre- and post-keyword negation patterns, and info-leakage tests verifying evaluator state is separated from agent-facing info), 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
 
 ## Local PC quick start
 

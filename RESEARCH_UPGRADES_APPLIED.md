@@ -18,7 +18,7 @@
 - Added aggregate permission-violation and constraint-violation metrics.
 - Added episode save/replay tooling for determinism checks.
 - Added a replayable successful Launch Readiness trajectory.
-- Updated benchmark CLIs to cover all four task families.
+- Updated benchmark CLIs to cover all six task families.
 
 ## Demo / researcher usability
 - Updated Streamlit task selector and failure display.
@@ -26,6 +26,6 @@
 - Preserved the Docker + local Ollama path and earlier natural-language search fix.
 
 ## Validation result
-- 27/27 automated tests pass.
+- 64/64 automated tests pass.
 - Launch Readiness deterministic baseline completes in 17 steps.
 - Replay check reports zero mismatches.

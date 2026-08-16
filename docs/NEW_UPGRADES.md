@@ -11,12 +11,12 @@ This build extends the earlier fixed prototype with implemented research infrast
 5. **Replay tooling** for deterministic episode re-execution.
 6. **Failure taxonomy** and additional permission/constraint violation metrics.
 7. **UI support** for the new task and failure diagnostics.
-8. **Benchmark coverage** updated to include all four task families.
+8. **Benchmark coverage** updated to include all six task families.
 
 ## Validation
 
-- 27 automated tests pass.
-- All four deterministic baselines complete their tasks.
+- 64 automated tests pass.
+- All six deterministic baselines complete their tasks.
 - Random-policy benchmark remains an unsolved floor in the packaged evaluation.
 - A saved Launch Readiness trajectory replays with zero mismatches.
 - Sample hard-difficulty train/dev/test manifests are included under `generated_scenarios/`.

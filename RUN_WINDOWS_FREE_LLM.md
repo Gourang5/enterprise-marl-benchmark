@@ -46,7 +46,7 @@ $env:GEMINI_API_KEY = "AIza..."   # paste your key here
 # Single task, one episode
 python scripts/run_llm_benchmark.py --provider gemini --task customer_incident --episodes 1
 
-# All four tasks
+# All six tasks
 python scripts/run_llm_benchmark.py --provider gemini --task all --episodes 1
 
 # Stronger model (still free up to usage limits)

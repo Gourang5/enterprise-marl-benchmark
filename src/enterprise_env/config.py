@@ -16,3 +16,4 @@ class EnvConfig:
     max_steps: int = 30
     db_path: str = ":memory:"
     reward: RewardConfig = RewardConfig()
+    strict_turns: bool = False

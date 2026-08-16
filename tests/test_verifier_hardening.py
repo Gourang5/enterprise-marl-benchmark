@@ -46,6 +46,14 @@ def test_affirms_approved_window_boundary():
     prefix = "A" * 70  # 70 neutral chars
     assert _affirms(prefix + " approved", "approved")
 
+def test_affirms_post_keyword_no_rejected():
+    # "Approved? No, this request is rejected." — negation AFTER the keyword
+    assert not _affirms("Approved? No, this request is rejected.", "approved")
+
+def test_affirms_post_keyword_validated_no():
+    # "Validated? No. Telemetry is missing." — negation AFTER the keyword
+    assert not _affirms("Validated? No. Telemetry is missing.", "validated")
+
 def test_affirms_provisioned_positive():
     assert _affirms("IT setup complete: system is provisioned.", "provisioned")
 

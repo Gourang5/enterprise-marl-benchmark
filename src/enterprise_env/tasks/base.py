@@ -13,18 +13,22 @@ _NEG_RE = re.compile(
 
 
 def _affirms(text: str, keyword: str, window: int = 60) -> bool:
-    """Return True iff *text* contains *keyword* without a negation in the preceding window.
+    """Return True iff *text* contains *keyword* without a negation nearby.
 
-    Prevents trivial verifier exploits such as ``"NOT approved"`` satisfying an
-    ``"approved"`` check or ``"has NOT been validated"`` satisfying ``"validated"``.
+    Checks both a prefix window (before the keyword) and a suffix window (after
+    the keyword) of *window* characters each.  This blocks both the common
+    pre-keyword exploit (``"NOT approved"``) and the post-keyword question-answer
+    exploit (``"Approved? No, this request is rejected."``).
     """
     lo = text.lower()
     klo = keyword.lower()
     idx = lo.find(klo)
     if idx == -1:
         return False
+    end = idx + len(klo)
     prefix = lo[max(0, idx - window): idx]
-    return not bool(_NEG_RE.search(prefix))
+    suffix = lo[end: end + window]
+    return not bool(_NEG_RE.search(prefix)) and not bool(_NEG_RE.search(suffix))
 
 
 @dataclass(frozen=True)
