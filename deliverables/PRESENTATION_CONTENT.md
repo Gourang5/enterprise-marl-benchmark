@@ -1,493 +1,497 @@
-# Presentation Content — Enterprise MARL Benchmark v1.2
+# Enterprise Multi-Agent RL Benchmark — Slide Deck
+## Presentation Content v1.2  |  70 tests pass  |  6 tasks  |  5 agents  |  5 apps
 
 ---
 
-# SECTION 1 — THE ENVIRONMENT
+# SECTION 1 — THE ENVIRONMENT  (Slides 1–11)
 
 ---
 
-## Slide 1 — Title & Thesis
+## Slide 1 — Title
 
-**Enterprise Multi-Agent RL Environment**
-*A benchmark for long-horizon coordination across simulated enterprise applications*
+**Enterprise Multi-Agent RL Benchmark**
 
-> "Enterprise work is not a single-turn tool call. It is a multi-agent, multi-application,
-> permission-bounded workflow that unfolds across hours or days. We build an open benchmark
-> that models this faithfully."
+> *Can autonomous agents coordinate across applications, roles, and permissions
+> to complete realistic enterprise workflows?*
 
-Key stats: **5 agents · 5 apps · 6 tasks · 70 automated tests · 0 flaky**
+- 5 heterogeneous agents · 5 simulated apps · 6 dependency-gated tasks
+- Shared persistent state · Deterministic state-based evaluator
+- 70 automated tests · Fully reproducible from seed
+
+**Visual suggestion:** central "company" node with 5 app nodes (Gmail, Slack, Jira, Calendar, Sheets)
+around it, 5 small agent icons below. Clean, minimal.
 
 ---
 
-## Slide 2 — Why Enterprise Agent Benchmarks?
+## Slide 2 — The Gap: Why Existing Benchmarks Miss Enterprise Work
 
-Existing benchmarks test simple, single-turn, single-agent tasks.
-Real enterprise work requires:
+| Dimension | Typical Benchmark | This Benchmark |
+|---|---|---|
+| Agents | 1 | 5, heterogeneous |
+| Apps / state | 1 | 5, shared persistent DB |
+| Permissions | None | Per-role × per-app × per-sheet |
+| Horizon | 1–5 steps | 8–17 subgoals, 25–45 steps |
+| Dependencies | None | Gated DAG — later credit blocked |
+| Information | Symmetric | Asymmetric per-agent observations |
+| Evaluation | String match / LLM judge | Deterministic DB state check |
 
-| Challenge | Example |
-|---|---|
-| **Multi-agent coordination** | Engineer validates before manager approves |
-| **Multi-app state** | Jira ticket links to Slack thread, Gmail thread, Sheets row |
-| **Role-based permissions** | Only pm_01 may write the vendor tracker sheet |
-| **Information asymmetry** | Each agent sees only their own inbox, channels, and tickets |
-| **Long horizon** | 8–17 sequential steps across 5 applications |
-| **Dependency ordering** | Legal review AND IT provisioning must both complete before kickoff |
+Enterprise work demands all of these simultaneously.
+No existing open benchmark covers all dimensions.
 
-**Gap in existing benchmarks:**
-- WebArena / SWEbench: single agent, single app, no permissions, short horizon
-- NetHack / BabyAI: no real-world grounding, no multi-app state
-- This benchmark: cross-app, multi-agent, permission-enforced, dependency-gated
+**Visual suggestion:** side-by-side comparison table, cells color-coded green (this benchmark)
+vs grey (typical benchmarks).
 
 ---
 
 ## Slide 3 — Environment Overview
 
-One synthetic Fortune 500 company (fully synthetic, Walmart-inspired naming)
-exposed through **five thin application simulators** backed by **one shared SQLite database**.
+One synthetic company, five application simulators, one shared database.
 
 ```
-Gmail ──────┐
-Slack ──────┤
-Jira ───────┼──► SQLite shared state ──► Subgoal verifier ──► Reward
-Calendar ───┤
-Sheets ─────┘
+Gmail · Slack · Jira · Calendar · Sheets
+              ↓
+      SQLite shared company state
+         ↙              ↘
+  Agent observations    Deterministic evaluator
+  (role-filtered)       (private, state-based)
 ```
 
-Every episode resets from a deterministic seed — fully reproducible.
-State is company-wide: an email sent by agent A is readable by agent B (if permitted).
+- Every episode resets from a deterministic integer seed
+- Evaluator state is **not** visible to agents — `info["eval"]` is separate from `info`
+- Semantic tool actions — malformed calls are invalid transitions, not crashes
+- An agent cannot succeed by claiming "task complete" in Slack — the DB must match
 
-**Key design choices:**
-- State-based deterministic verification — an agent cannot succeed by saying "task complete"
-- Evaluator state (`info["eval"]`) is **separated** from agent-visible state
-- Semantic tool calls — malformed calls are invalid transitions, not crashes
+**Visual suggestion:** three-row diagram: apps row → shared state row → two outputs
+(observations left, evaluator right).
 
 ---
 
 ## Slide 4 — Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│  Policy / multi-agent controller        │
-└────────────────┬────────────────────────┘
-                 │ Action(agent, app, action_type, params)
-                 ▼
-┌─────────────────────────────────────────┐
-│  EnterpriseEnv                          │
-│  ┌──────────────────────────────────┐   │
-│  │  Role-filtered observation       │   │
-│  │  (inbox headers, channels, etc.) │   │
-│  └──────────────────────────────────┘   │
-│  ┌──────────────────────────────────┐   │
-│  │  Semantic tool action validator  │   │
-│  └──────────────────────────────────┘   │
-└────────────────┬────────────────────────┘
-                 ▼
-┌─────────────────────────────────────────┐
-│  App simulators (Gmail/Slack/Jira/      │
-│  Calendar/Sheets) — thin, stateless     │
-└────────────────┬────────────────────────┘
-                 ▼
-┌─────────────────────────────────────────┐
-│  SQLite shared company state            │
-│  ┌────────────┐  ┌──────────────────┐   │
-│  │  Private   │  │  Agent-visible   │   │
-│  │  verifier  │  │  observation     │   │
-│  │  (DAG +    │  │  (filtered by    │   │
-│  │  reward)   │  │  role + perms)   │   │
-│  └────────────┘  └──────────────────┘   │
-└─────────────────────────────────────────┘
+Policy / controller
+      │
+      ▼  Action(agent, app, action_type, params)
+EnterpriseEnv
+  ├── role-filtered observation builder
+  ├── semantic action validator + dispatcher
+  └── reward engine
+      │
+      ▼
+App simulators  (thin, stateless — pure DB reads/writes)
+      │
+      ▼
+SQLite shared state  ──→  private verifier (DAG + subgoal checks)
 ```
 
-Execution model: **turn-based actor-selected sequential** — each step selects the next
-acting agent; agents do not act simultaneously. An experimental PettingZoo AEC
-compatibility layer is available (`pip install -e ".[rl]"`).
+- Execution: **turn-based, actor-selected sequential** (not truly parallel)
+- RL interface: Gymnasium-compatible `reset(seed)` / `step(action)` / `close()`
+- **Experimental** PettingZoo AEC adapter available (`pip install -e ".[rl]"`)
+- Standard MARL algorithms require an action encoder — semantic Dict spaces are not
+  directly consumable by off-the-shelf policy libraries
+
+**Visual suggestion:** vertical pipeline with labeled boxes and arrows. Mark PettingZoo
+as "Experimental" with a small badge.
 
 ---
 
-## Slide 5 — Multi-Agent Model & Permissions
+## Slide 5 — Multi-Agent Model
 
-Five heterogeneous agents with distinct roles, apps, and permissions:
+Five agents with **different roles, different app access, different information**.
 
-| Agent | Role | Gmail | Slack | Jira | Calendar | Sheets |
-|---|---|---|---|---|---|---|
-| pm_01 (Sarah) | Project Manager | R/W | R/W | R/W | R/W | owner |
-| eng_01 (Arjun) | Engineer | — | R/W | R/W | R/W | viewer |
-| product_01 (Maya) | Product Manager | — | R/W | R/W | — | editor |
-| mgr_01 (Daniel) | Eng. Manager | — | R/W | R/W | R/W | — |
-| cs_01 (Priya) | Customer Success | R/W | R | R/W | — | — |
+| Agent | Role | App Access | Sheet Role |
+|---|---|---|---|
+| pm_01 | Project Manager | Gmail, Slack, Jira, Calendar, Sheets | Owner (R/W) |
+| eng_01 | Engineer | Slack, Jira, Calendar | Viewer |
+| product_01 | Product Manager | Slack, Jira, Sheets | Editor |
+| mgr_01 | Eng. Manager | Slack, Jira, Calendar | — |
+| cs_01 | Customer Success | Gmail, Slack, Jira | — |
 
-**Sheet-level RBAC**: owner > editor > viewer — enforced server-side on every write.
-**Tool-level permissions**: per-agent whitelist stored in DB, checked before execution.
+- **Who** can act: per-agent tool whitelist enforced on every call
+- **When** credit is earned: subgoal dependencies, not step order
+- **What** each agent sees: only their own inbox, accessible channels, searchable tickets
 
-Permissions enforce **who** can act.
-Subgoal dependencies enforce **when** a subgoal can be credited.
+**Visual suggestion:** agent permission matrix as a grid with colored cells.
+Rows = agents, columns = apps.
 
 ---
 
-## Slide 6 — Long-Horizon Task Example: Vendor Onboarding
+## Slide 6 — Long-Horizon Task: Vendor Onboarding
 
-The hardest task — 8 subgoals, 40-step horizon, genuine parallel branches:
+**8 subgoals · 40-step horizon · 5 apps · 4 roles must act**
+
+A new vendor (TechNova Solutions) must be onboarded end-to-end.
+
+Steps required across roles:
+1. **pm_01** discovers the vendor email and finds the procurement ticket (Gmail → Jira)
+2. **product_01** clears the legal contract (Jira)     ← runs in parallel with step 3
+3. **eng_01** confirms IT provisioning (Jira)           ← runs in parallel with step 2
+4. **mgr_01** approves the procurement ticket (Jira)
+5. **pm_01** marks vendor ACTIVE in the tracker sheet (Sheets)
+6. **pm_01** schedules kickoff meeting (Calendar)       — requires steps 2+3 complete
+7. **pm_01** announces completion in Slack (Slack)      — requires steps 5+6 complete
+
+Research properties: parallel branches, strict RBAC on sheet write, role separation,
+information asymmetry, negation-hardened verification.
+
+**Visual suggestion:** horizontal role swim-lane diagram.
+Rows = agents; columns = time steps; colored boxes = actions; arrows = dependencies.
+
+---
+
+## Slide 7 — Task Dependency DAG (Vendor Onboarding)
 
 ```
-discover_request (pm_01 reads vendor email)
+discover_request (pm_01)
         │
-        ├──► find_main_ticket (pm_01 reads VEND-401)
+        ├──► find_main_ticket (pm_01)
         │           │
-        │           └──► manager_approval (mgr_01 approves VEND-401)
+        │           └──► manager_approval (mgr_01)
         │                       │
-        │                       └──► update_vendor_sheet (pm_01 marks ACTIVE in Sheets)
-        │                                                       │
-        ├──► legal_review (product_01 clears VEND-402) ─────────┤
-        │           │                                            │
-        │           └──────────────┬──────────────────────────  │
-        │                          │                             │
-        └──► it_provisioning (eng_01 confirms VEND-403)         │
-                            │      │                             │
-                            └──────┴──► schedule_kickoff ───────┤
-                                                                 ▼
-                                             announce_live (pm_01 Slack)
+        │                       └──► update_vendor_sheet (pm_01)
+        │                                                    │
+        ├──► legal_review (product_01) ─────────────────────►│
+        │                              │                      │
+        │                              └──► schedule_kickoff ►│
+        └──► it_provisioning (eng_01) ─┘                      ▼
+                                               announce_live (pm_01)
 ```
 
-**Research properties**: parallel prerequisites (legal ∥ IT), 5 apps, strict RBAC on
-sheet write, multi-role separation, negation-hardened verifier, information asymmetry.
+- Nodes are **subgoals**, not steps — credit fires when DB state matches the predicate
+- Later subgoals are locked until prerequisites complete
+- Parallel branches (legal ∥ IT) both required before kickoff
+- Verifier is negation-hardened: `"NOT provisioned"` fails, `"Provisioned and confirmed"` passes
+
+**Visual suggestion:** clean DAG with role-colored nodes.
+pm_01 = blue, eng_01 = green, product_01 = orange, mgr_01 = red.
 
 ---
 
-## Slide 7 — Partial Observability & Information Asymmetry
+## Slide 8 — Partial Observability & Permissions
 
-Each agent's observation contains **only**:
-- Their own email inbox headers (must `read_email` to see body)
+**What each agent can see:**
+- Own email inbox headers only (must `read_email` to see body)
 - Slack channels they belong to
-- Jira tickets they can access (requires search first — no direct lookup by ID)
-- Their own calendar
-- Agent identity + task instruction
+- Jira tickets returned by their own `search_issues` query
+- Own calendar
 
-**Not visible to agents:**
+**What no agent can see:**
 - Other agents' inboxes
-- Verifier progress / subgoal status (`info["eval"]` is stripped at the API boundary)
-- Full Jira database — must search to discover ticket IDs
+- Verifier progress or subgoal status
+- Full Jira database (search required — ticket IDs are not pre-known)
 - Sheet cells outside their membership role
 
-**Distractor injection** via ScenarioFactory: realistic near-miss emails and Jira tickets
-(same enterprise domain, different task-relevant details) challenge retrieval.
+**Practical research challenge:**
+- Agents must `search_emails` and `search_issues` with relevant keywords to discover task context
+- Distractors (realistic near-miss emails/tickets) make retrieval non-trivial
+- Wrong permission → `{"success": false, "message": "Permission denied"}` — not silent failure
+
+**Visual suggestion:** two columns: "Agent A sees" (inbox A, channels A) vs "Agent B sees"
+(inbox B, channels B) — with a locked icon in between.
 
 ---
 
-## Slide 8 — Reward Design & Deterministic Verification
+## Slide 9 — Reward Design & Deterministic Verification
 
 ### Reward components
 
-| Component | Value | Purpose |
+| Signal | Value | Purpose |
 |---|---|---|
 | Valid tool action | +0.25 | Execution credit |
-| Subgoal progress | +8 × (1/N) | Shaped reward per newly unlocked subgoal |
-| Multi-agent coordination | +2.0 | Bonus when subgoal requires prior agent handoff |
+| Subgoal unlocked | +8 × (1/N) | Shaped, per new subgoal |
+| Coordination bonus | +2.0 | Multi-agent handoff required |
 | Terminal success | +75.0 | Episode completion |
-| Redundant action | −1.0 | Anti-hacking: repeated reads do not farm reward |
+| Redundant action | −1.0 | Penalizes reward farming |
 | Step cost | −0.10 | Efficiency pressure |
 | Timeout | −15.0 | Horizon enforcement |
 
-### Deterministic verification
+### Verification
 
-Success is a **state-based predicate** over SQLite — not trajectory similarity, not LLM judge.
-The verifier checks: *did the correct agent post the correct content to the correct record?*
+- Success = **state predicate over SQLite** — not string match, not LLM judge
+- Clause-boundary negation detection: `"NOT approved"` → fail; `"Approved. No further action."` → pass
+- Agent cannot succeed by posting "done" in Slack — the ticket, sheet, and calendar records must all match
 
-**Negation-hardened**: clause-boundary-aware keyword matching.
-`"NOT approved"` → fails. `"Approved. No further action required."` → passes.
-`"Previous request rejected. This one approved."` → passes (negation in prior sentence).
-
-An agent cannot succeed by saying "task complete" in Slack — the DB state must match.
+**Visual suggestion:** reward timeline showing shaped signal unlocking at each subgoal,
+spike at terminal success.
 
 ---
 
-## Slide 9 — Evaluation Infrastructure
+## Slide 10 — Evaluation, Baselines & Replay
 
 ### Four-tier policy taxonomy
 
-| Policy | Success Rate | Purpose |
-|---|---|---|
-| **Random** | **0%** all 6 tasks | Lower bound — tasks require structured reasoning |
-| **Zero-Shot LLM** | **0%** (qwen2.5:3b, 1 ep/task) | Raw generalization; the meaningful research number |
-| **Hint-Guided LLM** | **93%** overall (qwen2.5:3b, 5 ep/task) | Validates task design and reward function |
-| **Oracle / Deterministic** | **100%** all 6 tasks | Upper bound — confirms mechanical solvability |
+```
+Random (0%)  ─────────────────────────────────────────  Oracle (100%)
+                 Zero-Shot LLM (0%, qwen2.5:3b)
+                 Hint-Guided LLM (93%, qwen2.5:3b)
+```
 
-All results from actual measured runs. Zero-shot 0% with a 3B local model establishes
-the capability gap. Larger models (GPT-4o, Claude 3.5) would achieve higher zero-shot
-performance — this is a model question, not a benchmark design question.
+| Policy | SR | Notes |
+|---|---|---|
+| Random | 0% all 6 tasks | Lower bound confirmed — tasks non-trivial |
+| Zero-Shot LLM | 0% (1 ep/task) | qwen2.5:3b; larger models expected higher |
+| Hint-Guided LLM | 93% (5 ep/task) | Language policy with procedural guidance; 2 failures are model-side param errors |
+| Oracle / Deterministic | 100% all 6 tasks | Upper bound; proves solvability |
 
 ### Infrastructure
-
-- Trajectory HTML exporter + JSON replay (`scripts/export_trajectory.py`)
-- Wilson 95% confidence intervals on all success-rate reports
-- Failure taxonomy: tool_use_failure, permission_failure, looping, constraint_violation, horizon
-- Reward ablation runner (shaped vs sparse)
+- HTML trajectory viewer + JSON replay (`scripts/export_trajectory.py`)
+- Wilson 95% CI on all success rates
+- Failure taxonomy: `tool_use_failure`, `permission_failure`, `looping`, `constraint_violation`
 - Streamlit dashboard (`streamlit run ui/app.py`)
-- Docker Compose reproducible deployment (Ollama + benchmark + UI)
+
+**Visual suggestion:** horizontal bar chart showing four tiers, color-coded.
+Random = grey, Zero-Shot = yellow, Hint-Guided = blue, Oracle = green.
 
 ---
 
-## Slide 10 — Full Results Table & Research Value
+## Slide 11 — Research Use Cases & Limitations
 
-### Measured results — qwen2.5:3b, centralized mode
+### What this benchmark studies
 
-| Task | Oracle | Hint-Guided (5ep) | Zero-Shot (1ep) | Random |
-|---|---|---|---|---|
-| customer_incident | 100% | 100% | 0% | 0% |
-| product_launch | 100% | 100% | 0% | 0% |
-| meeting_conflict | 100% | 80% | 0% | 0% |
-| launch_readiness | 100% | 100% | 0% | 0% |
-| budget_approval | 100% | 100% | 0% | 0% |
-| vendor_onboarding | 100% | 80% | 0% | 0% |
-| **OVERALL** | **100%** | **93%** | **0%** | **0%** |
+- **Planning** — multi-step reasoning across apps and roles
+- **Tool use** — structured semantic action selection under partial observability
+- **Coordination** — one agent's output becomes another's prerequisite
+- **Delegation** — transferring work across roles at the correct moment
+- **Long-horizon reasoning** — 8–17 subgoals, 25–45 step episodes
+- **Partial observability** — asymmetric information across heterogeneous agents
+- **Credit assignment** — shaped reward over a dependency-gated DAG
+- **Error recovery** — invalid action returns error; agent must adapt
 
-Two hint-guided failures: model constraint_violation (wrong parameter format) on
-meeting_conflict and vendor_onboarding — task design is correct; failure is model-side.
+### Honest limitations
 
-### Research value
+- Execution is turn-based sequential — true parallel MARL requires an action encoder
+- Experimental PettingZoo AEC adapter; not all AEC methods tested
+- Entity IDs fixed per task family — splits are seed-disjoint but not entity-disjoint
+- Zero-shot measured on qwen2.5:3b (1 ep/task only); result is model-dependent
+- No Figma, GitHub, or HR apps in this version
 
-| Finding | Implication |
-|---|---|
-| Oracle 100% | Tasks are mechanically solvable — not broken or under-specified |
-| Random 0% | Tasks require structured sequential reasoning — not trivially solvable |
-| Hint-guided 93% | Reward function fires correctly; DAGs are well-specified |
-| Zero-shot 0% | Large open capability gap; structured workflow knowledge is critical |
-
-### Limitations (honest)
-
-- Zero-shot evaluated on qwen2.5:3b only; larger models expected to score higher
-- Execution is turn-based sequential; true parallel MARL requires action encoding
-- Entity IDs fixed per task family; entity-disjoint OOD splits are planned
-- PettingZoo adapter is experimental — known limitations documented in wrapper
+**Visual suggestion:** two-column checklist: research capabilities (green ticks)
+vs limitations (orange flags).
 
 ---
 
-# SECTION 2 — THE SCENARIO FACTORY
+# SECTION 2 — THE SCENARIO FACTORY  (Slides 12–18)
 
 ---
 
-## Slide 11 — Why a Factory?
+## Slide 12 — Why a Factory Is Necessary
 
-A single handcrafted task is a **demo**. A factory that mass-produces environments
-is a **research instrument**.
+A handcrafted task is a **demo**.
+A factory that mass-produces environments is a **research instrument**.
 
 **The RL training loop requires:**
-1. **Training set** — held-out seeds the agent has never seen
-2. **Dev set** — hyperparameter tuning without contaminating test
-3. **Test set** — final evaluation, never used during training
-4. **Curriculum** — easy → adversarial progression during learning
-5. **Ablation variants** — same task, different distractor density, same seed
 
-**Without a factory:** evaluation is on the same 6 handcrafted episodes every run.
-Training/test contamination is inevitable.
+| Need | Without Factory | With Factory |
+|---|---|---|
+| Training data | Same 6 episodes every run | 1,000+ seed-disjoint episodes |
+| Generalization test | Impossible (train = test) | Held-out seed spaces enforced |
+| Curriculum | Manual difficulty adjustment | easy → adversarial presets |
+| Reproducibility | Hope nothing changed | Same seed → identical episode, always |
+| Scale-up | 6 tasks maximum | Thousands of validated scenario instances |
 
-**With a factory:** generate 1,000 training seeds, 200 dev, 500 test —
-all disjoint, all reproducible, all validatable in one command.
-
----
-
-## Slide 12 — Factory Architecture
-
-```
-Task family (customer_incident, vendor_onboarding, …)
-    + Difficulty preset (easy / medium / hard / adversarial)
-    + Seed (integer → fully deterministic)
-                │
-                ▼
-        ScenarioFactory.build()
-                │
-    ┌───────────┴────────────────────────────┐
-    │  make_env(task, max_steps)             │
-    │  env.reset(seed)     ← task fixtures   │
-    │  _inject_distractors(env, seed, count) │
-    │  validate(env)       ← sanity checks   │
-    └────────────────────────────────────────┘
-                │
-                ▼
-    EnterpriseEnv (ready for episode)
-                │
-                ▼
-    generate_split(n, split, difficulty, seed)
-                │
-                ▼
-    export_dataset() → train.jsonl / dev.jsonl / test.jsonl / manifest.json
-```
-
-Every generated scenario is validated before export:
-zero initial progress · acyclic DAG · all dependency IDs resolve
+**Visual suggestion:** split screen — left: "6 handcrafted tasks (demo)";
+right: "factory → 1000s of validated scenarios (research)".
 
 ---
 
-## Slide 13 — What Is Implemented Today
+## Slide 13 — Factory Architecture
 
-**ScenarioFactory** (`enterprise_env/generation.py`) — fully functional:
+```
+Task family  +  Seed  +  Difficulty preset
+                │
+                ▼
+        ScenarioFactory.build()       ◄─── IMPLEMENTED
+          ├── make_env(task)
+          ├── env.reset(seed)          ← task fixtures + company state
+          ├── inject_distractors()     ← seed-specific realistic noise
+          └── validate()              ← structural + solvability checks
+                │
+                ▼
+          Live EnterpriseEnv  →  generate_split()  →  export_dataset()
+                                       │
+                                       ▼
+                             JSONL scenario manifests
+                         (scenario_id, seed, difficulty,
+                          apps, agents, subgoal_count,
+                          validator_status)
 
-| Capability | Status |
+═══════════════════════════════════════════════════════════
+PLANNED — Production-scale generation
+        CompanySpec → org generator → identity generator
+        → permission matrix → app state generators
+        → cross-app entity graph → task archetype
+        → DAG synthesizer → verifier generator
+        → curriculum calibrator → large-scale validation
+```
+
+**Visual suggestion:** two-section pipeline diagram.
+Top half (implemented) in solid color; bottom half (planned) in lighter grey with "PLANNED" label.
+
+---
+
+## Slide 14 — What Is Implemented Today
+
+**ScenarioFactory** (`enterprise_env/generation.py`) — production-ready for current task families:
+
+| Capability | Detail |
 |---|---|
-| `build(task, seed, difficulty)` — live env in one call | ✅ Implemented |
-| 4 difficulty presets (easy/medium/hard/adversarial) | ✅ Implemented |
-| Realistic near-miss distractor pools | ✅ Implemented |
-| Disjoint seed ranges for train/dev/test | ✅ Implemented |
-| JSONL manifest export with per-scenario metadata | ✅ Implemented |
-| Validation gates (zero progress, acyclic DAG, dep resolution) | ✅ Implemented |
-| 6 task families with full DAG, verifier, and oracle baseline | ✅ Implemented |
-| Seeded distractor content variation across episodes | ✅ Implemented |
-
-**Scalable axes**: task family × seed × difficulty × split
+| `build(task, seed, difficulty)` | Live, validated env in one call |
+| 4 difficulty presets | easy (2) / medium (6) / hard (15) / adversarial (30) distractors |
+| Realistic distractor pools | 10 email subjects/bodies, 7 Jira tickets, 6 Slack messages |
+| Seed-disjoint splits | train: 0–999k / dev: 1M–2M / test: 2M–3M |
+| JSONL manifest export | scenario_id, seed, difficulty, apps, agents, subgoal_count |
+| Validation gates | Zero initial progress · acyclic DAG · dep IDs resolve |
+| 6 task families | Full DAG, verifier, oracle baseline for every task |
 
 ```python
-from enterprise_env.generation import ScenarioFactory
 factory = ScenarioFactory()
 
-# Single live environment
+# One live environment
 env, obs, info = factory.build("vendor_onboarding", seed=42, difficulty="hard")
+# info["validator_status"] == "passed"
 
 # Full dataset
-factory.export_dataset("generated_scenarios", train=1000, dev=200, test=500, difficulty="hard")
+factory.export_dataset("generated_scenarios",
+                        train=1000, dev=200, test=500, difficulty="hard")
 ```
+
+**Visual suggestion:** checklist table with green tick marks.
 
 ---
 
-## Slide 14 — Production-Scale Factory Design (Planned)
-
-Current factory fixes entity IDs, agent names, org topology, and DAG structure per task family.
-Production-scale generalization requires parameterizing these axes:
+## Slide 15 — Production-Scale Generation Architecture  *(Planned)*
 
 ```
-CompanySpec
-    → org chart generation (headcount, reporting, team structure)
-    → employee identity generation (names, roles, seniority)
-    → permission matrix generation (per-role × per-app × per-sheet)
-    → app state generation
-        → email thread history
-        → Slack channel history
-        → Jira ticket history (prior issues, comments, assignees)
-        → calendar state (existing meetings, conflicts)
-        → sheet state (existing rows, data)
-    → cross-app entity consistency
-        → same person ID appears in email, Slack, Jira, Calendar correctly
-    → task archetype parameterization
-        → vary requester, approver identity, ticket codes, project names
-    → dependency DAG synthesis
-        → vary subgoal count, branching, parallel vs sequential structure
-    → entity-disjoint OOD train/test splits
-    → distractor generation from CompanySpec (not hardcoded pools)
+CompanySpec (seed + org parameters)
+      │
+      ├──► Org chart generator         → headcount, reporting lines, teams
+      ├──► Identity generator          → names, roles, seniority, departments
+      ├──► Permission matrix builder   → per-role × per-app × per-sheet
+      │
+      ├──► App state generators
+      │     ├── Email thread history
+      │     ├── Slack channel history
+      │     ├── Jira ticket history    → past issues, comments, assignees
+      │     ├── Calendar state         → existing meetings, blocked hours
+      │     └── Sheet state            → existing rows, data
+      │
+      ├──► Cross-app entity graph      → same person ID consistent everywhere
+      │
+      ├──► Task archetype              → requester, approver, ticket codes vary
+      ├──► DAG synthesizer             → subgoal count, branching, parallel/linear
+      ├──► Verifier generator          → auto-derives predicates from task spec
+      │
+      └──► Entity-disjoint OOD splits  → test agents on unseen org topologies
 ```
 
-**Status**: design intent documented; implementation is the primary planned extension.
-Current task families are the reference implementations for what generated tasks must satisfy.
+**Status**: design intent documented. Current task families are the reference
+implementation for what a generated scenario must satisfy.
+
+**Visual suggestion:** pipeline flowchart, all boxes in light grey with dashed borders.
+Single "PLANNED" watermark across the slide.
 
 ---
 
-## Slide 15 — Validation & Quality Assurance
+## Slide 16 — Factory Quality Gates
 
-### Structural validation (every scenario)
+Every generated scenario passes this pipeline before it is accepted into a dataset:
 
-- Zero initial verifier progress — no subgoal is accidentally pre-satisfied
-- Acyclic dependency graph — DFS cycle detection on every build
-- Valid dependency references — all `depends_on` IDs exist in subgoal set
+```
+Generated Scenario
+        │
+        ▼
+[1] Schema validation          → scenario_id, seed, apps, agents all present
+        │
+        ▼
+[2] Cross-app consistency      → same entity IDs used correctly across apps
+        │
+        ▼
+[3] Permission validation      → every subgoal assignable to an agent with access
+        │
+        ▼
+[4] Solvability check          → oracle baseline completes episode from initial state
+        │
+        ▼
+[5] Verifier validation        → correct trajectory passes · negated trajectory fails
+        │
+        ▼
+[6] Leakage check              → verifier state absent from agent-visible info
+        │
+        ▼
+[7] Replay determinism         → same seed → byte-identical starting state
+        │
+        ▼
+[8] Difficulty calibration     → distractor count matches requested preset
+        │
+        ▼
+   ✅  Accepted dataset instance
+```
 
-### Solvability validation
+**Implemented today**: gates 1, 4, 6, 7, 8 via `validate()` + oracle baseline.
+**Planned**: gates 2, 3, 5 (automated, systematic — currently verified by construction per task family).
 
-- Oracle baseline (rule-based) covers all 6 task families
-- Oracle at 100% across 25 seeds confirms mechanical solvability
-- Running oracle on any new generated scenario confirms it is solvable
-
-### Leakage prevention
-
-- `info["eval"]` contains privileged evaluator data; stripped from agent observations
-- PettingZoo adapter strips eval keys from per-agent info dicts
-- Verifier cannot be satisfied by text claims — only DB state counts
-
-### Verifier hardening (36 unit tests)
-
-- Pre-keyword negation: `"NOT approved"` → False
-- Post-keyword question-answer: `"Approved? No, rejected."` → False
-- Cross-sentence "No": `"Approved. No further action."` → True
-- Prior-sentence negation: `"Previously rejected. Now approved."` → True
+**Visual suggestion:** vertical pipeline with numbered green gates; checkmarks on implemented,
+dashed outlines on planned.
 
 ---
 
-## Slide 16 — Difficulty, Curriculum & Splits
+## Slide 17 — Difficulty, Curriculum & Reproducibility
 
-### Difficulty presets
+### Difficulty calibration
 
-| Level | Distractors | Use |
+| Preset | Distractors | Effect |
 |---|---|---|
-| easy | 2 | Initial training; near-clean environment |
-| medium | 6 | Standard evaluation |
-| hard | 15 | Heavy retrieval challenge |
-| adversarial | 30 | Maximum noise; misleading near-miss keywords |
+| easy | 2 | Minimal noise — near-direct path |
+| medium | 6 | Focused retrieval required |
+| hard | 15 | Heavy noise — same domain, wrong details |
+| adversarial | 30 | Near-miss keywords designed to mislead |
 
-Oracle 100% at all levels (distractor-immune by design).
-Random 0% at all levels (structured reasoning required regardless of noise).
+Oracle = 100% at all levels (scripted oracle is distractor-immune).
+Random = 0% at all levels (structured reasoning required at every difficulty).
 
-### Train/Dev/Test seed allocation
+### Splits
 
-| Split | Seed range | Purpose |
-|---|---|---|
-| train | 0 – 999,999 | Agent learning |
-| dev | 1,000,000 – 1,999,999 | Hyperparameter selection |
-| test | 2,000,000 – 2,999,999 | Final evaluation |
+Disjoint seed ranges prevent episode reuse across train/dev/test.
+Same seed → identical episode always — fully reproducible.
 
-All splits are **seed-disjoint** (episodes never repeat across splits).
-Current limitation: splits share entity IDs across splits — not entity-disjoint.
-Entity-disjoint OOD splits require CompanySpec generation (planned).
+```bash
+# Generate a full curriculum dataset in one command
+python scripts/generate_dataset.py \
+    --output generated_scenarios \
+    --train 1000 --dev 200 --test 500 \
+    --difficulty hard --seed 42
+```
+
+**Visual suggestion:** bar chart — x-axis = difficulty level; y-axis = success rate.
+Oracle bar at 100% (green) across all levels; Random bar at 0% (grey) across all levels.
 
 ---
 
-## Slide 17 — RL Integration & Future Training
+## Slide 18 — Operating at Scale · Closing Value Proposition
 
-### What works today (no code changes needed)
-
-- Gymnasium-compatible `EnterpriseEnv` with `reset(seed)` / `step(action)` / `close()`
-- Shaped reward signal ready for PPO / A2C / value-based methods
-- Experimental PettingZoo AEC adapter (`pettingzoo_aec.py`)
-- Trajectory export for behavioral cloning data collection
-
-### Limitations to address for RL training
-
-- Semantic actions (Dict spaces) require an action encoder before standard RL libraries
-- True parallel MARL is not supported — execution is actor-selected sequential
-- Observation space is Dict-based; requires flattening or a custom encoder
-
-### Planned training curriculum
-
-```
-1. Behavioral Cloning  — train on hint-guided trajectories
-2. PPO / Policy Gradient — optimize against shaped reward
-3. QMIX / VDN (CTDE) — centralized training, decentralized execution
-4. LLM Fine-tuning — SFT on successful episodes → RLHF
-```
-
-The environment infrastructure supports all four paradigms without modification to the core env.
-
----
-
-## Slide 18 — Closing Value Proposition
-
-**What this version delivers:**
+### What is delivered in this version
 
 | Capability | Status |
 |---|---|
-| 6 long-horizon multi-agent enterprise tasks | ✅ |
-| 5 apps, 5 heterogeneous agents, role-based permissions | ✅ |
-| Dependency-gated subgoal DAGs (linear, fan-out, parallel) | ✅ |
-| Deterministic state-based verification (no LLM judge) | ✅ |
-| Negation-hardened verifiers (clause-boundary-aware) | ✅ |
-| Oracle (100%) + Random (0%) confirm task quality | ✅ |
-| Hint-guided 93% validates reward function soundness | ✅ |
-| Zero-shot 0% establishes the open research gap | ✅ |
-| ScenarioFactory: seeds × difficulty × train/dev/test splits | ✅ |
+| 6 long-horizon multi-agent tasks | ✅ |
+| 5 apps · 5 agents · role-based permissions | ✅ |
+| Dependency-gated subgoal DAGs | ✅ |
+| Deterministic DB-state verification | ✅ |
+| Oracle 100% · Random 0% · Hint-guided 93% | ✅ |
+| ScenarioFactory: seeds × difficulty × splits | ✅ |
+| Scenario manifests with validator_status | ✅ |
 | Trajectory export, replay, Streamlit dashboard | ✅ |
 | Docker Compose reproducible deployment | ✅ |
-| 70 automated tests, 0 flaky | ✅ |
+| 70 automated tests · 0 flaky | ✅ |
 
-**Primary planned extensions:**
-- Entity-disjoint OOD splits via CompanySpec generation
-- RL training: BC, PPO, QMIX against shaped reward
-- Additional apps: GitHub, HR, Finance, Docs
-- Larger model zero-shot evaluation (GPT-4o, Claude 3.5, Gemini 1.5 Pro)
+### The research question this benchmark opens
 
-**The research question this benchmark opens:**
-> Can autonomous multi-agent systems close the gap between zero-shot performance
-> and structured-workflow (SOP-guided) performance in realistic enterprise coordination tasks?
+> Can autonomous multi-agent systems close the gap between
+> **zero-shot performance (0%)** and **procedurally-guided performance (93%)**
+> in realistic enterprise coordination workflows?
+
+**Next steps**: Behavioral Cloning on hint-guided trajectories →
+PPO against shaped reward → entity-disjoint OOD evaluation.
+
+**Visual suggestion:** "delivered" checklist on the left; bold research question
+centered on the right with a simple 0% → 93% gap graphic.

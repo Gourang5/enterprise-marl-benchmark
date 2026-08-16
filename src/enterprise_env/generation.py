@@ -106,6 +106,9 @@ class ScenarioFactory:
             raise ValueError(f"Unknown difficulty {difficulty}; choices={sorted(PRESETS)}")
         return PRESETS[difficulty]
 
+    # Five fixed agent IDs present in every task family.
+    AGENTS = ["pm_01", "eng_01", "product_01", "mgr_01", "cs_01"]
+
     def build(self, task_name="customer_incident", seed=42, difficulty="medium"):
         diff = self.resolve_difficulty(difficulty)
         env = make_env(task_name, diff.max_steps)
@@ -113,22 +116,29 @@ class ScenarioFactory:
         self._inject_distractors(env, seed, diff.distractors or 0)
         self.validate(env)
         info = dict(info)
-        info.update({"difficulty": diff.name, "distractors": diff.distractors or 0})
+        info.update({
+            "difficulty":       diff.name,
+            "distractors":      diff.distractors or 0,
+            "validator_status": "passed",
+        })
         return env, obs, info
 
     def blueprint(self, task_name="customer_incident", seed=42, difficulty="medium", split="custom"):
         diff = self.resolve_difficulty(difficulty)
         task = TASKS[task_name]()
         return {
-            "task_name":    task_name,
-            "task_id":      task.task_id,
-            "seed":         int(seed),
-            "difficulty":   diff.name,
-            "split":        split,
-            "max_steps":    diff.max_steps or task.max_steps,
-            "distractors":  diff.distractors,
-            "apps":         self._task_apps(task_name),
-            "subgoal_count":len(task.subgoals()),
+            "scenario_id":      f"{task_name}_{int(seed)}_{diff.name}",
+            "task_name":        task_name,
+            "task_id":          task.task_id,
+            "seed":             int(seed),
+            "difficulty":       diff.name,
+            "split":            split,
+            "max_steps":        diff.max_steps or task.max_steps,
+            "distractors":      diff.distractors,
+            "apps":             self._task_apps(task_name),
+            "agents":           self.AGENTS,
+            "subgoal_count":    len(task.subgoals()),
+            "validator_status": "pending",  # set to "passed" after build()+validate()
         }
 
     def generate_split(self, task_names=None, n=100, split="train", difficulty="medium", seed=0):

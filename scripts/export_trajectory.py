@@ -5,7 +5,7 @@ from pathlib import Path
 from enterprise_env.evaluation.runner import run_episode
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument("--task",choices=["customer_incident","product_launch","meeting_conflict"],default="customer_incident");ap.add_argument("--seed",type=int,default=42);ap.add_argument("--output",default="benchmark_results/trajectory.html");a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument("--task",choices=["customer_incident","product_launch","meeting_conflict","launch_readiness","budget_approval","vendor_onboarding"],default="customer_incident");ap.add_argument("--seed",type=int,default=42);ap.add_argument("--output",default="benchmark_results/trajectory.html");a=ap.parse_args()
     result=run_episode(a.task,seed=a.seed)
     rows=[]
     for x in result["trajectory"]:
