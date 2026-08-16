@@ -1,9 +1,9 @@
 # Enterprise Multi-Agent RL Benchmark — Slide Deck
-## Presentation Content v1.2  |  70 tests pass  |  6 tasks  |  5 agents  |  5 apps
+## Presentation Content v1.3  |  70 tests pass  |  6 tasks  |  5 agents  |  5 apps
 
 ---
 
-# SECTION 1 — THE ENVIRONMENT  (Slides 1–11)
+# SECTION 1 — THE ENVIRONMENT  (Slides 1–13)
 
 ---
 
@@ -270,11 +270,94 @@ vs limitations (orange flags).
 
 ---
 
-# SECTION 2 — THE SCENARIO FACTORY  (Slides 12–18)
+## Slide 12 — RL & Research Interface
+
+**The environment exposes a clean Gymnasium-compatible RL boundary.**
+
+### Observation (per-agent, role-filtered)
+
+```
+obs = {
+  "agent":    {employee_id, name, role, team_id},
+  "time":     int,                # step counter
+  "inbox":    [email headers],    # bodies hidden — requires read_email
+  "channels": [channel records],  # only channels agent belongs to
+  "calendar": [event records],    # own calendar only
+  "sheets":   [{sheet_id, name, role}],
+  "task":     {id, name, instruction}
+}
+```
+
+### Action (structured semantic space)
+
+```python
+Action(agent_id="pm_01", app="jira",
+       action_type="change_status",
+       parameters={"issue_id": "VEND-401", "status": "approved"})
+```
+
+18 action types across 5 apps. **Each agent sees only their permitted subset** (14–18 actions).
+The permission table is the **static action mask** — invalid calls return an error, never crash.
+
+### Step return
+
+```
+obs, reward, terminated, truncated, info = env.step(action)
+
+info["eval"]  → {progress, subgoals, reward_components}  # evaluator-only; not shown to agent
+```
+
+### CTDE framing
+
+Training centralizes `info["eval"]` subgoal labels for critic conditioning.
+Execution uses per-agent obs only — policies are fully decentralized.
+
+**Visual suggestion:** three horizontal bands: Observation (left panel), Action encoder
+(center, labeled "integration boundary"), Environment step (right). Arrow from env back
+to obs. Small lock icon on info["eval"]. Color-code: obs = blue, action = green, eval = grey.
 
 ---
 
-## Slide 12 — Why a Factory Is Necessary
+## Slide 13 — Research Questions Enabled
+
+**The 93-point gap between zero-shot and guided performance is the open problem.**
+
+| Research Question | Method | Benchmark Feature |
+|---|---|---|
+| Can BC close 0% → 93%? | Behavioral Cloning on oracle trajectories | Trajectory export, deterministic seed |
+| Does CTDE outperform IQL? | MAPPO vs IQL (shared vs independent critic) | `info["eval"]["subgoals"]` labels |
+| Does action masking speed convergence? | PPO ± permission mask | Static permission table per agent |
+| Does distractor density affect sample efficiency? | RL across easy→adversarial presets | 4 difficulty levels, calibrated counts |
+| Can a policy generalize across seeds? | Train 0–999k, test 2M–3M | Disjoint seed-range splits |
+| Does shaped reward outperform sparse? | Ablate subgoal bonus | Reward component breakdown |
+| Can offline RL recover near-oracle behavior? | IQL / CQL on oracle dataset | `export_dataset()` |
+
+### Offline RL pipeline (available today)
+
+```bash
+# 1. Generate oracle trajectories for all 6 tasks, 1000 seeds
+python scripts/generate_dataset.py --train 1000 --dev 200 --test 500
+
+# 2. Export oracle trajectory for a specific episode
+python scripts/export_trajectory.py --task vendor_onboarding --seed 42
+
+# 3. Use trajectories for BC / imitation learning
+```
+
+**Next step**: Behavioral Cloning on hint-guided trajectories → PPO against shaped reward
+→ entity-disjoint OOD evaluation.
+
+**Visual suggestion:** bar chart with 4 policies on x-axis (Random / Zero-Shot / Hint-Guided / Oracle),
+success rate on y-axis (0% / 0% / 93% / 100%). Bracket spanning the gap with label "Open Research Gap".
+Below: 3-arrow pipeline: "BC → PPO → OOD eval".
+
+---
+
+# SECTION 2 — THE SCENARIO FACTORY  (Slides 14–20)
+
+---
+
+## Slide 14 — Why a Factory Is Necessary
 
 A handcrafted task is a **demo**.
 A factory that mass-produces environments is a **research instrument**.
@@ -294,7 +377,7 @@ right: "factory → 1000s of validated scenarios (research)".
 
 ---
 
-## Slide 13 — Factory Architecture
+## Slide 15 — Factory Architecture
 
 ```
 Task family  +  Seed  +  Difficulty preset
@@ -329,7 +412,7 @@ Top half (implemented) in solid color; bottom half (planned) in lighter grey wit
 
 ---
 
-## Slide 14 — What Is Implemented Today
+## Slide 16 — What Is Implemented Today
 
 **ScenarioFactory** (`enterprise_env/generation.py`) — production-ready for current task families:
 
@@ -359,7 +442,7 @@ factory.export_dataset("generated_scenarios",
 
 ---
 
-## Slide 15 — Production-Scale Generation Architecture  *(Planned)*
+## Slide 17 — Production-Scale Generation Architecture  *(Planned)*
 
 ```
 CompanySpec (seed + org parameters)
@@ -392,7 +475,7 @@ Single "PLANNED" watermark across the slide.
 
 ---
 
-## Slide 16 — Factory Quality Gates
+## Slide 18 — Factory Quality Gates
 
 Every generated scenario passes this pipeline before it is accepted into a dataset:
 
@@ -435,7 +518,7 @@ dashed outlines on planned.
 
 ---
 
-## Slide 17 — Difficulty, Curriculum & Reproducibility
+## Slide 19 — Difficulty, Curriculum & Reproducibility
 
 ### Difficulty calibration
 
@@ -467,7 +550,7 @@ Oracle bar at 100% (green) across all levels; Random bar at 0% (grey) across all
 
 ---
 
-## Slide 18 — Operating at Scale · Closing Value Proposition
+## Slide 20 — Operating at Scale · Closing Value Proposition
 
 ### What is delivered in this version
 
