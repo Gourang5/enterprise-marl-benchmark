@@ -63,7 +63,7 @@ def main() -> None:
     print("=" * 70)
     print()
     print(sep)
-    print(row("Task", "Oracle", "Hint-Guided", "Zero-Shot", "Δ SR", "Random"))
+    print(row("Task", "Oracle", "Hint-Guided", "Zero-Shot", "Gap SR", "Random"))
     print(sep)
 
     total_hint_sr = 0.0
@@ -111,13 +111,13 @@ def main() -> None:
 
     print()
     print("Interpretation:")
-    print(f"  Hint-Guided SR  : {pct(avg_h)} — validates task correctness & reward design")
-    print(f"  Zero-Shot SR    : {pct(avg_z)} — measures raw LLM reasoning without workflow context")
+    print(f"  Hint-Guided SR  : {pct(avg_h)} - validates task correctness & reward design")
+    print(f"  Zero-Shot SR    : {pct(avg_z)} - measures raw LLM reasoning without workflow context")
     print(f"  Gap             : {sign}{avg_delta * 100:.0f} percentage points")
     print()
     print("  The gap quantifies the value of SOP/RAG-style workflow knowledge.")
-    print("  A larger gap → tasks require structured procedural knowledge, not just reasoning.")
-    print("  A smaller gap → tasks are solvable by general-purpose common sense.")
+    print("  A larger gap => tasks require structured procedural knowledge, not just reasoning.")
+    print("  A smaller gap => tasks are solvable by general-purpose common sense.")
     print()
 
     # Save comparison JSON

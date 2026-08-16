@@ -1,0 +1,7 @@
+task,seed,success,truncated,steps,reward,progress,invalid_actions,invalid_action_rate,repeated_actions,permission_violations,constraint_violations,policy_error
+customer_incident,100,False,False,9,-0.4000000000000007,0.25,0,0.0,4,0,0,"RuntimeError: LLM policy failed after 6 attempts: exact/cyclic no-progress action already attempted, resource already read, or status already set"
+product_launch,100,False,False,3,1.5928571428571425,0.14285714285714285,0,0.0,0,0,0,RuntimeError: LLM policy failed after 6 attempts: illegal tool jira.change_status for product_01
+meeting_conflict,100,False,True,25,12.99999999999999,0.4,3,0.12,19,0,3,
+launch_readiness,100,False,False,2,1.2999999999999998,0.125,0,0.0,0,0,0,"RuntimeError: LLM policy failed after 6 attempts: exact/cyclic no-progress action already attempted, resource already read, or status already set"
+budget_approval,100,False,False,8,9.092857142857143,0.14285714285714285,0,0.0,3,0,0,"RuntimeError: LLM policy failed after 6 attempts: exact/cyclic no-progress action already attempted, resource already read, or status already set"
+vendor_onboarding,100,False,False,11,1.149999999999999,0.25,0,0.0,2,0,0,"RuntimeError: LLM policy failed after 6 attempts: exact/cyclic no-progress action already attempted, resource already read, or status already set"
