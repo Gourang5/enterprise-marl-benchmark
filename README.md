@@ -1,4 +1,4 @@
-# Enterprise Multi-Agent RL Benchmark — v1.3
+# Enterprise Multi-Agent RL Benchmark v1.3
 
 A database-backed multi-agent RL environment where five heterogeneous agents coordinate
 across five simulated enterprise applications to complete long-horizon workflows.
@@ -10,11 +10,11 @@ across five simulated enterprise applications to complete long-horizon workflows
 ## What Is This
 
 Five AI agents with different roles and permissions must complete realistic enterprise workflows
-together — like onboarding a vendor, resolving an incident, or approving a budget — across
+together, like onboarding a vendor, resolving an incident, or approving a budget, across
 Gmail, Slack, Jira, Calendar, and Sheets backed by a shared SQLite database.
 
 **Key design decisions:**
-- Agents cannot succeed by claiming "task complete" in text — the database state must match the verifier predicate
+- Agents cannot succeed by claiming "task complete" in text; the database state must match the verifier predicate
 - Each agent sees only their own inbox, channels, calendar, and permitted sheets
 - Subgoals are dependency-gated: later credit is blocked until prerequisites complete
 - Verification is deterministic state-based, not LLM judge or string match
@@ -43,8 +43,8 @@ Gmail, Slack, Jira, Calendar, and Sheets backed by a shared SQLite database.
 | pm_01 | Project Manager | Gmail, Slack, Jira, Calendar, Sheets | Owner (R/W) |
 | eng_01 | Engineer | Slack, Jira, Calendar | Viewer |
 | product_01 | Product Manager | Slack, Jira, Sheets | Editor |
-| mgr_01 | Engineering Manager | Slack, Jira, Calendar | — |
-| cs_01 | Customer Success | Gmail, Slack, Jira | — |
+| mgr_01 | Engineering Manager | Slack, Jira, Calendar | No access |
+| cs_01 | Customer Success | Gmail, Slack, Jira | No access |
 
 ---
 
@@ -75,10 +75,9 @@ Gmail, Slack, Jira, Calendar, and Sheets backed by a shared SQLite database.
 
 | Policy | Result | Notes |
 |---|---|---|
-| Random | 0/30 (5 ep/task) | Lower bound — confirms tasks are non-trivial |
-| Zero-Shot LLM | 0/30 (5 ep/task) | qwen2.5:3b pilot — no hints, autonomous only |
-| Hint-Guided LLM | 24/30 (5 ep/task) | SOP-guided debug baseline — not autonomous capability |
-| Oracle | 30/30 (5 ep/task) | Deterministic scripted upper bound — proves solvability |
+| Zero-Shot LLM | 0/30 (5 ep/task) | qwen2.5:3b pilot, no hints, autonomous only |
+| Hint-Guided LLM | 24/30 (5 ep/task) | SOP-guided debug baseline, not autonomous capability |
+| Oracle | 30/30 (5 ep/task) | Deterministic scripted upper bound, proves solvability |
 
 Zero-shot and hint-guided both use qwen2.5:3b via Ollama. Larger models expected to score higher.
 Hint-guided result validates task and reward design, not LLM intelligence.
@@ -95,15 +94,44 @@ obs = {
 }
 ```
 
-Evaluator state (`progress`, `subgoals`, `reward_components`) lives in `info["eval"]` — never exposed to the policy.
+Evaluator state (`progress`, `subgoals`, `reward_components`) lives in `info["eval"]`, never exposed to the policy.
+
+---
+
+## Architecture
+
+See [`docs/architecture.md`](docs/architecture.md) for the full architecture walkthrough.
+
+```
+              Agent / Policy
+                    |
+                    v
+              EnterpriseEnv
+              reset / step
+                    |
+        -------------------------
+        |                       |
+        v                       v
+  App Simulators           Task / Verifier
+        |
+        v
+ Gmail | Slack | Jira | Calendar | Sheets
+        |
+        v
+       CompanyRepository
+        |
+        v
+     SQLite Database
+     Shared Company State
+```
 
 ---
 
 ## Factory
 
-### Factory V1 — ScenarioFactory (all 6 tasks, implemented)
+### Factory V1 - ScenarioFactory (all 6 tasks, implemented)
 
-Generates reproducible scenario variants across seed × difficulty × train/dev/test splits.
+Generates reproducible scenario variants across seed x difficulty x train/dev/test splits.
 
 ```bash
 # Generate a dataset
@@ -114,12 +142,12 @@ python scripts/generate_dataset.py \
 ```
 
 Difficulty presets: `easy` (2 distractors) / `medium` (6) / `hard` (15) / `adversarial` (30).
-Splits are seed-disjoint — the model never sees a training seed at test time.
+Splits are seed-disjoint; the model never sees a training seed at test time.
 
-### Factory V2 — Generated Worlds (vendor_onboarding vertical slice, prototype)
+### Factory V2 - Generated Worlds (vendor_onboarding vertical slice, prototype)
 
 Adds entity-level world generation: different employee names, emails, vendor names, and ticket IDs per seed.
-A policy trained across seeds cannot memorize ticket IDs — it must learn the workflow.
+A policy trained across seeds cannot memorize ticket IDs; it must learn the workflow.
 
 ```bash
 # Seed 42: Smart Metrics, METR-401/402/403, sha256:841edac7c2667c37
@@ -162,7 +190,7 @@ pip install -e ".[ui]"    # Streamlit dashboard
 ## Quick Demo
 
 ```bash
-# Oracle — 100% all 6 tasks
+# Oracle - 100% all 6 tasks
 python scripts/run_benchmark.py --task all --episodes 5
 
 # Trajectory HTML viewer
@@ -204,7 +232,7 @@ Five providers supported (three free, no credit card):
 # Ollama (local, no key)
 python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b --task all --episodes 5
 
-# Gemini (free — recommended for Windows, fastest)
+# Gemini (free, recommended for Windows, fastest)
 $env:GEMINI_API_KEY="AIza..."
 python scripts/run_llm_benchmark.py --provider gemini --task all --episodes 5
 
@@ -222,10 +250,10 @@ See `RUN_WINDOWS_FREE_LLM.md` for the Windows step-by-step guide.
 
 ## Limitations
 
-- Turn-based sequential execution — true parallel MARL requires an action encoder on top
+- Turn-based sequential execution; true parallel MARL requires an action encoder on top
 - PettingZoo AEC adapter is experimental, not fully tested with standard MARL libraries
-- Entity IDs fixed per task family — splits are seed-disjoint but not entity-disjoint (Factory V1)
-- Zero-shot evaluated on qwen2.5:3b only — result is model-dependent, not a ceiling
+- Entity IDs fixed per task family; splits are seed-disjoint but not entity-disjoint (Factory V1)
+- Zero-shot evaluated on qwen2.5:3b only; result is model-dependent, not a ceiling
 - Factory V2 entity-level generation implemented for vendor_onboarding only (prototype)
 - No Figma, GitHub, HRMS, or finance system simulators in this version
 
@@ -257,7 +285,7 @@ Results are written to `benchmark_results/` on the host.
 ## Design Principles
 
 1. One source of truth across all apps (SQLite)
-2. Thin app simulators — not SaaS clones
+2. Thin app simulators, not SaaS clones
 3. Partial, asymmetric per-agent observations
 4. Search and discovery before direct mutation
 5. Heterogeneous permissions enforced at every action
@@ -265,4 +293,4 @@ Results are written to `benchmark_results/` on the host.
 7. State-based deterministic verification
 8. Reward progress and outcome, not clicks
 9. Seeded reproducibility with inspectable traces
-10. Research instrument first — UI is a debug surface
+10. Research instrument first; UI is a debug surface
