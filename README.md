@@ -1,4 +1,4 @@
-# Enterprise Multi-Agent RL Environment — Final Submission v1.2 (Factory + Sheets Edition)
+# Enterprise Multi-Agent RL Environment — Final Submission v1.3 (Factory v2 + Generated Worlds)
 
 A database-first, multi-agent enterprise RL benchmark for long-horizon workflows across simulated Gmail, Slack, Jira, Calendar and Sheets.
 
@@ -123,6 +123,33 @@ python scripts/inspect_company.py
 ```
 
 
+## New research infrastructure in v1.3 — factory_v2 (Generated Worlds)
+
+`factory_v2` adds a second factory layer on top of `ScenarioFactory`. While ScenarioFactory generates scenario variants (seed × difficulty × split) for all 6 tasks, factory_v2 generates entire **entity-level worlds** from a seed: different employee names, emails, vendor names, ticket IDs, sheet IDs, and channel IDs — all deterministically derived, validated, and fingerprinted.
+
+```bash
+# Generate and validate a world — seed 42
+python scripts/generate_environment.py --seed 42 --run-oracle
+
+# Generate a different world — different vendor, employees, ticket IDs
+python scripts/generate_environment.py --seed 43 --run-oracle
+
+# Show the full JSON manifest
+python scripts/generate_environment.py --seed 42 --json
+```
+
+Key properties:
+- `CompanySpec(seed, scenario, difficulty)` → `GeneratedWorld` (deterministic, isolated RNG)
+- SHA-256 fingerprint: same seed → same fingerprint; different seed → different fingerprint
+- `WorldValidator`: 5-check structural validation without a live database
+- `GeneratedVendorOnboardingTask`: all verifiers use world entity IDs, not hardcoded strings
+- `GeneratedVendorOnboardingBaseline`: oracle scripted policy using generated IDs
+- Agent IDs (`pm_01`, `eng_01`, etc.) stay fixed — only display names and emails vary
+- `schema_version: 2` manifests (legacy ScenarioFactory = version 1, untouched)
+- 48 dedicated tests: determinism, diversity, fingerprint, validator, employee/vendor structure, manifest, oracle solvability (5 seeds), cross-app propagation, legacy regression
+
+Current scope: entity-generation is implemented for `vendor_onboarding` as proof-of-concept. `ScenarioFactory` continues to cover all 6 tasks for seed/difficulty variation.
+
 ## New research infrastructure in v1.2
 
 - `SheetsApp`: spreadsheet access and mutation with membership roles.
@@ -132,7 +159,7 @@ python scripts/inspect_company.py
 - failure taxonomy: looping, retrieval, permission, constraint, tool, policy and horizon failures.
 - sample generated split manifests under `generated_scenarios/`.
 
-See `docs/NEW_UPGRADES.md`, `docs/factory.md`, and `docs/replay_and_failures.md`.
+See `docs/NEW_UPGRADES.md`, `docs/factory.md`, `docs/rl_interface.md`, and `docs/replay_and_failures.md`.
 
 ## Reward design
 
@@ -159,7 +186,7 @@ A successful action with no state/progress change receives the redundant-action 
 
 Generate sample splits with `python scripts/generate_dataset.py --output generated_scenarios --train 100 --dev 20 --test 50 --difficulty hard`.
 
-**Scope note:** The current factory generates reproducible scenario variants across distractor density and seed. Entity IDs (`INC-421`, `LAUNCH-101`, etc.), agent names, org topology, and DAG structure are fixed per task family — train/dev/test splits are seed-disjoint but not entity-disjoint. Entity-disjoint OOD splits and org/DAG-level variation are planned extensions and are outside the scope of this version.
+**Scope note:** `ScenarioFactory` generates reproducible scenario variants across distractor density and seed for all 6 tasks. Entity IDs, agent names, org topology, and DAG structure are fixed per task family — splits are seed-disjoint but not entity-disjoint. `factory_v2` (v1.3) adds entity-level world generation for `vendor_onboarding`: different employee names/emails and vendor identities per seed, with SHA-256 fingerprinting and structural validation. Extension to remaining 5 tasks is the planned next step.
 
 ## Design principles
 
@@ -230,7 +257,7 @@ See `RUN_WINDOWS_FREE_LLM.md` for the complete Windows/VS Code step-by-step guid
 
 ## Final validation
 
-The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **70 automated tests** (including negation-hardening tests covering both pre- and post-keyword negation patterns, and info-leakage tests verifying evaluator state is separated from agent-facing info), 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
+The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **118 automated tests** (70 original environment tests + 48 factory_v2 tests). Coverage includes: negation-hardening (pre- and post-keyword negation patterns), info-leakage prevention (evaluator state separated from agent-facing info), task solvability, permission enforcement, factory_v2 determinism + diversity + fingerprint + oracle solvability across 5 seeds, cross-app entity propagation, manifest schema v2, and legacy regression.
 
 ## Local PC quick start
 
