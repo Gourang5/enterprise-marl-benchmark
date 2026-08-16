@@ -6,7 +6,7 @@ Validation performed in the packaging environment.
 
 - Python source compilation (`compileall`).
 - Editable install using existing local build tooling (`pip install -e . --no-build-isolation`).
-- **64/64 automated tests passed** (including negation-hardening and info-leakage tests).
+- **70/70 automated tests passed** (including negation-hardening and info-leakage tests).
 - Six deterministic task baselines are wired into the benchmark runner.
 - Launch Readiness baseline: 3/3 successful episodes, 17 steps, zero invalid actions.
 - 10-seed paired rule/random baseline report regenerated for all six tasks.

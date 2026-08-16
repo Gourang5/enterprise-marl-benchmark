@@ -26,6 +26,6 @@
 - Preserved the Docker + local Ollama path and earlier natural-language search fix.
 
 ## Validation result
-- 64/64 automated tests pass.
+- 70/70 automated tests pass.
 - Launch Readiness deterministic baseline completes in 17 steps.
 - Replay check reports zero mismatches.

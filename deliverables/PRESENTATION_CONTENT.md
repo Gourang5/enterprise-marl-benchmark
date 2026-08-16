@@ -10,7 +10,7 @@ across employees, applications, permissions, and time. The benchmark tests wheth
 agents can discover information, coordinate, respect permissions, and reach a
 verifiable business outcome.
 
-Key stats: **5 agents · 5 apps · 6 tasks · 64 tests pass · 0 flaky**
+Key stats: **5 agents · 5 apps · 6 tasks · 70 tests pass · 0 flaky**
 
 ### Slide 2 — One persistent company world
 One synthetic Fortune 500 company is exposed through five thin application simulators:

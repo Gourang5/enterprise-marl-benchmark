@@ -230,7 +230,7 @@ See `RUN_WINDOWS_FREE_LLM.md` for the complete Windows/VS Code step-by-step guid
 
 ## Final validation
 
-The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **64 automated tests** (including negation-hardening tests covering both pre- and post-keyword negation patterns, and info-leakage tests verifying evaluator state is separated from agent-facing info), 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
+The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **70 automated tests** (including negation-hardening tests covering both pre- and post-keyword negation patterns, and info-leakage tests verifying evaluator state is separated from agent-facing info), 25-seed rule/random baseline evaluation, reward-ablation execution, trajectory export, provider-response parser mocks (Ollama, Gemini, Qwen), and editable installation.
 
 ## Local PC quick start
 

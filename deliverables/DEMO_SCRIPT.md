@@ -131,7 +131,7 @@ docker compose up
 
 ## Key Talking Points
 
-- "64 tests pass — every design decision is verified, including negation-hardening"
+- "70 tests pass — every design decision is verified, including negation-hardening"
 - "Not a toy: 5 apps, 5 agents, 6 tasks, 40 subgoals total, realistic permissions"
 - "The four-tier taxonomy is the contribution: not just 'does LLM solve it?' but 'why or why not?'"
 - "The gap between zero-shot and hint-guided is the research question for the next year"

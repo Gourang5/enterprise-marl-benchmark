@@ -2,8 +2,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-# Matches negation words that can precede a keyword and invert its meaning.
-# Window: we scan the 60 characters immediately before the keyword.
+# Full negation list — used for prefix checks within the keyword's sentence
+# and for the yes/no-question answer check.
 _NEG_RE = re.compile(
     r"\b(not|no|never|cannot|can't|isn't|wasn't|don't|doesn't|won't|"
     r"failed|rejected|declined|denied|unable|refuse|refusal|disagree|"
@@ -11,14 +11,33 @@ _NEG_RE = re.compile(
     re.I,
 )
 
+# Suffix-only negation — excludes bare "no" because enterprise phrases like
+# "no issues found", "no further action required", "no blockers" appear in the
+# suffix of affirmative statements and must not block a valid match.
+_STRONG_POST_NEG_RE = re.compile(
+    r"\b(not|never|cannot|can't|isn't|wasn't|won't|"
+    r"rejected|declined|denied|refused|disapproved)\b",
+    re.I,
+)
+
+# Characters that mark a sentence / clause boundary.
+_SENT_SEP = frozenset('.!?;')
+
 
 def _affirms(text: str, keyword: str, window: int = 60) -> bool:
-    """Return True iff *text* contains *keyword* without a negation nearby.
+    """Return True iff *text* affirmatively contains *keyword*.
 
-    Checks both a prefix window (before the keyword) and a suffix window (after
-    the keyword) of *window* characters each.  This blocks both the common
-    pre-keyword exploit (``"NOT approved"``) and the post-keyword question-answer
-    exploit (``"Approved? No, this request is rejected."``).
+    Uses clause-boundary–aware negation scoping rather than a fixed character
+    window, so cross-sentence negation does not block a valid affirmation:
+
+    - ``"Not approved"``                          → False  (pre-keyword negation)
+    - ``"Approved? No, rejected."``               → False  (question-answer)
+    - ``"Approved. No further action required."`` → True   (different sentence)
+    - ``"Validated, no issues found."``           → True   (bare "no" ≠ negation)
+    - ``"Previous rejected. This one approved."`` → True   (negation in prior sentence)
+
+    *window* is retained for API compatibility but is not used; sentence
+    boundaries replace the fixed-width scan.
     """
     lo = text.lower()
     klo = keyword.lower()
@@ -26,9 +45,38 @@ def _affirms(text: str, keyword: str, window: int = 60) -> bool:
     if idx == -1:
         return False
     end = idx + len(klo)
-    prefix = lo[max(0, idx - window): idx]
-    suffix = lo[end: end + window]
-    return not bool(_NEG_RE.search(prefix)) and not bool(_NEG_RE.search(suffix))
+
+    # Find the sentence that contains the keyword.
+    sent_start = 0
+    for ci in range(idx - 1, -1, -1):
+        if lo[ci] in _SENT_SEP:
+            sent_start = ci + 1
+            break
+
+    sent_end = len(lo)
+    for ci in range(idx, len(lo)):
+        if lo[ci] in _SENT_SEP:
+            sent_end = ci
+            break
+
+    # 1. Negation anywhere in the sentence before the keyword.
+    if _NEG_RE.search(lo[sent_start:idx]):
+        return False
+
+    # 2. Yes/no-question pattern: keyword immediately followed by '?'
+    #    The next clause may be a direct "No" answer — treat that as negation.
+    trail = lo[end: end + 5].lstrip()
+    if trail.startswith('?'):
+        q_pos = lo.index('?', end)
+        next_clause = lo[q_pos + 1: q_pos + 20].lstrip()
+        if next_clause and _NEG_RE.search(next_clause[:15]):
+            return False
+
+    # 3. Strong negation within the same sentence after the keyword.
+    if _STRONG_POST_NEG_RE.search(lo[end:sent_end]):
+        return False
+
+    return True
 
 
 @dataclass(frozen=True)

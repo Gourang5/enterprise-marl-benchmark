@@ -42,7 +42,7 @@ def test_affirms_not_resolved():
     assert not _affirms("Issue is NOT resolved; still open.", "resolved")
 
 def test_affirms_approved_window_boundary():
-    # Negation more than 60 chars before keyword should NOT block it
+    # Long neutral prefix (no negation) must not block the keyword
     prefix = "A" * 70  # 70 neutral chars
     assert _affirms(prefix + " approved", "approved")
 
@@ -83,6 +83,33 @@ def test_affirms_telemetry_positive():
 
 def test_affirms_no_telemetry():
     assert not _affirms("No telemetry available for review.", "telemetry")
+
+
+# ── Clause-boundary regression tests (reviewer-requested) ─────────────────────
+
+def test_affirms_question_then_no():
+    # "Approved? No" — negation is the answer to a yes/no question, must reject
+    assert not _affirms("Approved? No", "approved")
+
+def test_affirms_not_approved_bare():
+    # Bare pre-keyword negation must reject
+    assert not _affirms("Not approved", "approved")
+
+def test_affirms_approval_pending_keyword_absent():
+    # "approved" does not appear in "Approval pending" — must return False
+    assert not _affirms("Approval pending", "approved")
+
+def test_affirms_approved_dot_no_further_action():
+    # "No" starts a NEW sentence after the period — must NOT negate "approved"
+    assert _affirms("Approved. No further action required.", "approved")
+
+def test_affirms_validated_comma_no_issues():
+    # "no issues" means zero issues, not negation of "validated" — must accept
+    assert _affirms("Validated, no issues found.", "validated")
+
+def test_affirms_prior_sentence_rejected_then_approved():
+    # "rejected" appears in a prior sentence — must NOT block the later "approved"
+    assert _affirms("Previous request rejected. This one approved.", "approved")
 
 
 # ── Integration: verifiers reject negation exploits in full env ─────────────
