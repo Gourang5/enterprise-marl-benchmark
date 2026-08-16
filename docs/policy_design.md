@@ -7,16 +7,20 @@ Each tier is a distinct research instrument, not a ranking of "better" policies.
 
 ```
 Random (0%)  ──────────────────────────────────────────  Oracle (100%)
-               Zero-Shot LLM (~30–50%, future work)
-               Hint-Guided LLM (100%, current)
+               Zero-Shot LLM (0%, qwen2.5:3b measured)
+               Hint-Guided LLM (93%, qwen2.5:3b measured)
 ```
 
 | Policy | Success Rate | Purpose |
 |---|---|---|
-| Random Baseline | 0% | Lower bound — confirms tasks are not trivially solvable |
-| Zero-Shot LLM | ~30–50% (est.) | Tests LLM generalization; separate research question |
-| **Hint-Guided LLM** | **100%** | **Validates task design and reward function** |
-| Oracle / Deterministic | 100% | Upper bound — proves mechanical solvability |
+| Random Baseline | 0% all 6 tasks | Lower bound — confirms tasks are not trivially solvable |
+| Zero-Shot LLM | 0% (qwen2.5:3b, 1 ep/task) | Raw generalization; the meaningful research number |
+| **Hint-Guided LLM** | **93%** (qwen2.5:3b, 5 ep/task) | **Validates task design and reward function** |
+| Oracle / Deterministic | 100% all 6 tasks | Upper bound — proves mechanical solvability |
+
+Note: Zero-shot is 0% for qwen2.5:3b specifically. Larger models (GPT-4o, Claude 3.5,
+Gemini 1.5 Pro) are expected to achieve higher zero-shot scores — the result depends on
+model capability, not task design quality.
 
 ---
 
@@ -58,15 +62,17 @@ This is analogous to the "oracle sanity check" used in RL benchmarks (e.g., Mini
 where a privileged policy is run first to confirm the environment is solvable before evaluating
 learned agents.
 
-### Why Zero-Shot Would Be Misleading Here
+### What the Zero-Shot Result Means
 
-Running zero-shot evaluation with `qwen2.5:3b` and reporting ~30% success would tell us:
+We measured zero-shot with `qwen2.5:3b`: 0% success across all 6 tasks.
+This tells us:
 
-- The 3B model has insufficient reasoning for 8-subgoal multi-agent coordination ← **model limitation**
-- Not: the tasks are too hard ← **not what we're measuring**
+- The 3B model lacks the multi-step reasoning required for 8-subgoal multi-agent coordination ← **model limitation**
+- Not: the tasks are unsolvable ← confirmed by Oracle 100% and Hint-Guided 93%
 
-A larger model (GPT-4o, Claude 3.5, Gemini 1.5 Pro) would achieve significantly higher zero-shot
-performance on the same tasks, demonstrating the result depends on model choice, not task design.
+A larger model (GPT-4o, Claude 3.5, Gemini 1.5 Pro) would achieve higher zero-shot
+performance on the same tasks. The zero-shot result is model-dependent, not a claim
+about task difficulty.
 
 ---
 
@@ -77,7 +83,7 @@ performance on the same tasks, demonstrating the result depends on model choice,
 | Oracle 100% vs Random 0% | Tasks span the full challenge spectrum — neither trivial nor impossible |
 | Same Det% at all difficulty levels | Scripted agents are distractor-immune; validates ScenarioFactory injection |
 | Random 0% at all difficulty levels | Tasks require structured sequential reasoning; random search insufficient |
-| Hint-guided LLM 100% | All 6 tasks are correctly specified, verifiable, and reward-consistent |
+| Hint-guided LLM 93% | All 6 tasks are correctly specified, verifiable, and reward-consistent; 2 failures are model-side (wrong param format) |
 
 ---
 

@@ -1,138 +1,172 @@
-# Demo Script — Enterprise MARL Benchmark v1.2 (6–8 min)
+# Demo Script — Enterprise MARL Benchmark v1.2 (4–6 min)
 
 ---
 
-## Segment 1: Setup & Architecture (0:00–1:00)
+## Segment 1: Architecture (0:00–1:00)
 
-**0:00** — Open repo in terminal. Show top-level structure:
+**0:00** — Open terminal in the project root. Show structure briefly:
 ```
 src/enterprise_env/   ← environment core
-tasks/                ← YAML task manifests
+  tasks/              ← 6 task definitions with subgoal DAGs
+  evaluation/         ← baselines, metrics, failure taxonomy
 scripts/              ← benchmark runners
 ui/                   ← Streamlit dashboard
-benchmark_results/    ← pre-run results
-docs/policy_design.md ← academic justification
+benchmark_results/    ← pre-run JSON/CSV results
+docs/                 ← policy design, factory, architecture
 ```
 
-**0:20** — Run tests:
+**0:20** — Run tests to confirm everything works:
 ```bash
 python -m pytest tests/ -v
 ```
-→ 34 passed, 0 failed. Call out what's tested: task solvability, no free initial progress, permissions, reward, DB.
+→ **70 passed, 0 failed.** Call out what is tested: task solvability, negation-hardened
+verifiers, no free initial progress, permission enforcement, reward components,
+info leakage prevention, evaluator/agent info separation.
 
-**0:40** — Briefly show the architecture diagram from README:
-"One SQLite company → 5 apps as controlled interfaces → 5 heterogeneous agents →
-dependency-gated subgoal DAGs → deterministic state verifier"
+**0:40** — Briefly describe the architecture:
+"One SQLite company database → 5 thin app simulators → 5 heterogeneous agents
+→ dependency-gated subgoal DAGs → deterministic state verifier.
+An agent cannot succeed by saying 'task complete' — the DB state must match."
 
 ---
 
-## Segment 2: Oracle Baseline + Trajectory (1:00–2:30)
+## Segment 2: Oracle Baseline (1:00–2:00)
 
-**1:00** — Run oracle baseline across all 6 tasks:
+**1:00** — Run the oracle baseline across all 6 tasks:
 ```bash
-python scripts/run_benchmark.py --task all
+python scripts/run_benchmark.py --task all --episodes 10
 ```
-→ 100% success on all tasks. Explain: "This proves every task is mechanically solvable.
-It's the oracle upper bound in our four-tier policy taxonomy."
+→ 100% success rate on all 6 tasks. Explain:
+"This confirms every task is mechanically solvable. It is the oracle upper bound
+in our four-tier taxonomy: Random (0%) → Zero-Shot LLM (0%) → Hint-Guided (93%) → Oracle (100%)."
 
-**1:30** — Export and open the trajectory viewer:
+**1:30** — Show the pre-run baseline results:
+```bash
+python -m json.tool benchmark_results/baselines.json | head -30
+```
+→ 100% success, 0 invalid actions, 0 permission violations.
+
+---
+
+## Segment 3: Trajectory Viewer (2:00–2:45)
+
+**2:00** — Export and view a trajectory:
 ```bash
 python scripts/export_trajectory.py --task customer_incident --seed 42
 ```
-Open `benchmark_results/customer_incident_trajectory.html`.
+Open `benchmark_results/customer_incident_trajectory.html` in a browser.
 
-Walk through one episode step by step:
-- Step 1: cs_01 reads email from customer
+Walk through the episode:
+- Step 1: cs_01 reads email from customer (Gmail)
 - Step 2: cs_01 searches Jira for open incidents
 - Step 3: eng_01 reads the Jira ticket (cross-agent coordination)
-- Step 4: eng_01 posts engineering findings
-- Step 5: pm_01 posts resolution to Slack
-→ Point out reward components, subgoal unlock sequence, agent turns
+- Step 4: eng_01 posts engineering findings on the ticket
+- Step 5: pm_01 resolves the issue and notifies Customer Success
+
+Point out: reward components, subgoal unlock sequence, which agent acts each step,
+how the verifier fires only when the correct agent posts the correct content to the correct record.
 
 ---
 
-## Segment 3: Streamlit Dashboard (2:30–3:30)
+## Segment 4: ScenarioFactory (2:45–3:30)
 
-**2:30** — Launch the UI:
+**2:45** — Show the factory generating a different seed and difficulty:
 ```bash
-streamlit run ui/app.py
+python -c "
+from enterprise_env.generation import ScenarioFactory
+f = ScenarioFactory()
+env, obs, info = f.build('vendor_onboarding', seed=99, difficulty='hard')
+print('Difficulty:', info['difficulty'])
+print('Distractors injected:', info['distractors'])
+print('Subgoals:', len(env.task.subgoals()))
+env.close()
+"
 ```
-Navigate to http://localhost:8501
+→ Difficulty: hard, Distractors: 15, Subgoals: 8
 
-- Show task cards (6 tasks, difficulty, subgoal count)
-- Show the four-tier policy taxonomy section with color-coded cards
-- Show the vendor_onboarding parallel DAG visualization
-- Click through task details, show agent/app table
+**3:00** — Generate a dataset split:
+```bash
+python scripts/generate_dataset.py \
+    --output generated_scenarios \
+    --train 20 --dev 5 --test 10 \
+    --difficulty hard
+```
+→ Produces `generated_scenarios/train.jsonl`, `dev.jsonl`, `test.jsonl`, `manifest.json`.
+"Each scenario is validated at export time: zero initial progress, acyclic DAG,
+all dependency IDs resolve. This is training data for RL or fine-tuning without
+test contamination — seed-disjoint splits enforced by the factory."
 
 ---
 
-## Segment 4: LLM Benchmark — Hint-Guided vs Zero-Shot (3:30–6:00)
+## Segment 5: LLM Results (3:30–5:00)
 
-**3:30** — Explain the research question:
-"We have two evaluation modes. Hint-guided is like an onboarded employee with SOPs.
-Zero-shot is truly autonomous — the model must reason from scratch."
-
-**3:45** — Run hint-guided episode (already done, show from llm_results_5ep.json):
-```bash
-cat benchmark_results/llm_results_5ep.json | python -m json.tool | head -50
-```
-OR show the summary: "93% overall success rate — 4/6 tasks at 100%"
-
-**4:15** — Run zero-shot comparison for one task (live or from pre-run results):
-```bash
-python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b \
-    --task customer_incident --episodes 1 --no-hints
-```
-→ Show it fail (policy error, missing parameters, loops) OR show low success rate
-
-**5:00** — Run the comparison script:
+**3:30** — Show hint-guided vs zero-shot comparison from pre-run results:
 ```bash
 python scripts/compare_hint_vs_zeroshot.py
 ```
-→ Show the table. Narrate: "The ~90-100pp gap proves that workflow knowledge —
-what companies encode in SOPs and runbooks — is the critical missing piece for
-autonomous enterprise agents. This is exactly what RAG systems attempt to inject."
+→ Show table. Narrate:
+"Hint-guided (SOP-guided): 93% overall — validates task design and reward.
+Zero-shot (qwen2.5:3b, no SOPs): 0% across all 6 tasks.
+The gap is the open research question this benchmark establishes."
+
+**4:00** — Optional live episode (requires Ollama):
+```bash
+python scripts/run_llm_benchmark.py \
+    --provider ollama --model qwen2.5:3b \
+    --task customer_incident --episodes 1
+```
 
 ---
 
-## Segment 5: Difficulty Benchmark + Factory (6:00–7:30)
+## Segment 6: Streamlit Dashboard (5:00–6:00, optional)
 
-**6:00** — Show difficulty results:
 ```bash
-cat benchmark_results/difficulty_results.json | python -m json.tool
+streamlit run ui/app.py
 ```
-→ Oracle: 100% at all 4 levels. Random: 0% at all levels.
-"Distractor injection doesn't fool the oracle — it has perfect information.
-But it will challenge learned agents trained without that immunity."
-
-**6:30** — Briefly show ScenarioFactory:
-```python
-# generation.py — show ScenarioFactory.build()
-```
-"4 difficulty tiers × 6 tasks × N seeds = a full dataset for training & evaluation.
-The train/dev/test split prevents benchmark contamination."
-
-**7:00** — Show docs/policy_design.md — the academic justification:
-"We deliberately separate two research questions:
- 1. Is the task well-designed? → hint-guided answers this (100% → yes)
- 2. Can LLMs generalize autonomously? → zero-shot answers this (low → future work)
-The next step is behavioral cloning or PPO on top of this environment."
+Navigate to http://localhost:8501 — task cards, four-tier policy taxonomy,
+vendor_onboarding DAG visualization, failure analysis.
 
 ---
 
-## Segment 6: Docker (Optional, if time permits)
+## Exact Commands That Work
 
 ```bash
-docker compose up
+# One-time setup
+python -m venv .venv
+source .venv/bin/activate          # Linux/macOS
+# .venv\Scripts\Activate.ps1       # Windows PowerShell
+pip install -e ".[dev]"
+
+# Verify (70 passed)
+pytest -q
+
+# Oracle baseline
+python scripts/run_benchmark.py --task all --episodes 10
+
+# Trajectory export
+python scripts/export_trajectory.py --task customer_incident --seed 42
+
+# ScenarioFactory demo
+python scripts/generate_dataset.py --output generated_scenarios --train 20 --dev 5 --test 10
+
+# Hint vs zero-shot comparison table
+python scripts/compare_hint_vs_zeroshot.py
+
+# Streamlit dashboard
+streamlit run ui/app.py
+
+# Live LLM episode (Ollama must be running)
+python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b \
+    --task customer_incident --episodes 1
 ```
-→ Ollama + model bootstrap + benchmark + Streamlit UI — one command deployment.
 
 ---
 
 ## Key Talking Points
 
-- "70 tests pass — every design decision is verified, including negation-hardening"
-- "Not a toy: 5 apps, 5 agents, 6 tasks, 40 subgoals total, realistic permissions"
-- "The four-tier taxonomy is the contribution: not just 'does LLM solve it?' but 'why or why not?'"
-- "The gap between zero-shot and hint-guided is the research question for the next year"
-- "Infrastructure is ready for PPO, QMIX, BC without any changes to the environment"
+- **"70 tests, 0 flaky"** — every design decision is automatically verified
+- **"Deterministic verification"** — DB state must match; cannot succeed by claiming success in text
+- **"Negation-hardened verifier"** — 'NOT approved' fails; 'Approved. No further action.' passes
+- **"Four-tier taxonomy"** — separates environment quality (oracle/hint) from model quality (zero-shot)
+- **"0% zero-shot gap"** — establishes the open research problem for RL and fine-tuning
+- **"Factory scales"** — seed-disjoint train/dev/test in one command
