@@ -3,7 +3,7 @@
 All tests are isolated from the static/legacy environment:
 - No test modifies existing task classes or seed data
 - No test modifies global state
-- Existing 70 tests are verified to still pass via the full suite
+- Existing 70 original tests are verified to still pass via the full suite
 
 Coverage:
   - Determinism (same seed → same world)

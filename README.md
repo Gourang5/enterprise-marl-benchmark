@@ -1,355 +1,269 @@
-# Enterprise Multi-Agent RL Environment — Final Submission v1.3 (Factory v2 + Generated Worlds)
+# Enterprise Multi-Agent RL Benchmark — v1.3
 
-A database-first, multi-agent enterprise RL benchmark for long-horizon workflows across simulated Gmail, Slack, Jira, Calendar and Sheets.
+A database-backed multi-agent RL environment where five heterogeneous agents coordinate
+across five simulated enterprise applications to complete long-horizon workflows.
 
-**Setting:** a fictionalized synthetic instance inspired by **Walmart Global Tech**. All employees, messages, incidents, customers and project data are synthetic and do not represent real Walmart information.
+**Setting:** synthetic fictionalized company. All employees, messages, tickets, and data are synthetic.
 
-## Why this version is stronger
+---
 
-- One shared SQLite company world and consistent identities across every app.
-- Agent observations do **not** expose hidden verifier/subgoal state or the full Jira database.
-- Search-first information discovery in Gmail, Slack and Jira.
-- Real dependency-gated subgoal DAGs: later credit is unavailable until prerequisites are achieved.
-- Six distinct research tasks with different failure modes, including multiple five-app cross-team workflows.
-- Actor-selected/event-driven multi-agent turns instead of mandatory five-person round-robin filler actions.
-- Role-based permissions and heterogeneous capabilities.
-- Reward anti-hacking: successful no-op/repeated reads are penalized rather than rewarded.
-- Deterministic state-based verification with zero free progress at reset.
-- Rule-based baselines for **all six tasks**.
-- Factory validation hook for task DAGs and initial solvability invariants.
-- Seed-dependent distractor variation so benchmark seeds produce different observable scenarios.
-- Strict action-parameter validation: malformed LLM actions become invalid transitions instead of crashing the episode.
-- Wilson 95% confidence intervals for success-rate reporting.
-- Reward ablation runner, HTML trajectory exporter, optional Streamlit viewer, and optional PettingZoo AEC adapter.
-- Episode trajectory logging and benchmark summaries.
+## What Is This
+
+Five AI agents with different roles and permissions must complete realistic enterprise workflows
+together — like onboarding a vendor, resolving an incident, or approving a budget — across
+Gmail, Slack, Jira, Calendar, and Sheets backed by a shared SQLite database.
+
+**Key design decisions:**
+- Agents cannot succeed by claiming "task complete" in text — the database state must match the verifier predicate
+- Each agent sees only their own inbox, channels, calendar, and permitted sheets
+- Subgoals are dependency-gated: later credit is blocked until prerequisites complete
+- Verification is deterministic state-based, not LLM judge or string match
+
+---
+
+## Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Environment API | Gymnasium-compatible | Standard RL interface |
+| Shared state | SQLite (in-memory, reset per seed) | Single source of truth across all apps |
+| App simulators | 5 thin Python modules | Gmail, Slack, Jira, Calendar, Sheets |
+| Verification | Deterministic predicate over DB | Reproducible, no LLM judge |
+| Multi-agent adapter | Experimental PettingZoo AEC | Optional, not fully tested |
+| LLM benchmark | Ollama / Gemini / Groq / Qwen / Anthropic | 5 providers, local and cloud |
+| Dashboard | Streamlit | Debug and demo surface |
+| Deployment | Docker Compose | Reproducible Ollama + benchmark |
+
+---
+
+## Agents
+
+| Agent ID | Role | Apps | Sheet Access |
+|---|---|---|---|
+| pm_01 | Project Manager | Gmail, Slack, Jira, Calendar, Sheets | Owner (R/W) |
+| eng_01 | Engineer | Slack, Jira, Calendar | Viewer |
+| product_01 | Product Manager | Slack, Jira, Sheets | Editor |
+| mgr_01 | Engineering Manager | Slack, Jira, Calendar | — |
+| cs_01 | Customer Success | Gmail, Slack, Jira | — |
+
+---
 
 ## Tasks
 
-### 1. P0 Partner Authentication Incident
-A project manager must discover a customer report among distractor email, correlate it to the correct Jira incident among distractor issues, assign and notify engineering, have the engineer record investigation and move the issue in progress, schedule a review, resolve the issue, and notify Customer Success.
+| # | Task | Subgoals | Steps | Apps | Key Research Property |
+|---|---|---|---|---|---|
+| 1 | Customer Incident | 7 | ~11 | Gmail, Jira, Slack, Calendar | Search/retrieval, entity correlation |
+| 2 | Product Launch | 7 | ~8 | Slack, Jira, Calendar | Approval chain, multi-agent handoffs |
+| 3 | Meeting Conflict | 5 | ~5 | Calendar, Slack | Constraint satisfaction, scheduling |
+| 4 | Launch Readiness | 8 | ~17 | Gmail, Slack, Jira, Calendar, Sheets | Private info asymmetry, 5-app workflow |
+| 5 | Budget Approval | 7 | ~8 | Jira, Sheets, Slack | Strict RBAC, approval chain |
+| 6 | Vendor Onboarding | 8 | ~9 | Gmail, Slack, Jira, Calendar, Sheets | Parallel prerequisites, RBAC |
 
-Research properties: search/retrieval, entity correlation, cross-app state, role delegation, delayed credit, dependency depth, distractors.
+---
 
-### 2. Checkout Launch Go/No-Go
-Product must inspect launch readiness, assign engineering, obtain an engineering validation, obtain manager approval, coordinate the go/no-go state in Slack, schedule a review, and close the launch ticket.
+## RL & Evaluation Design
 
-Research properties: heterogeneous roles, approval chain, multi-agent handoffs, dependency graph, cross-app coordination.
+### Reward components
+- `+subgoal_progress`: shaped credit when a new subgoal unlocks
+- `+coordination_bonus`: cross-agent handoff required
+- `+terminal_success`: episode completion
+- `-redundant_action`: repeated read with no state change (anti-hacking)
+- `-step_cost`: efficiency pressure
+- `-timeout`: horizon enforcement
 
-### 3. Priority Meeting Conflict
-A customer meeting is immovable, an engineering review conflicts with it, and Arjun has another blocked hour. Agents must inspect both calendars, infer the earliest feasible slot, reschedule, and notify participants.
+### Policy taxonomy
 
-Research properties: constraint satisfaction, distributed observations, scheduling, objective mathematical verification.
+| Policy | Result | Notes |
+|---|---|---|
+| Random | 0/30 (5 ep/task) | Lower bound — confirms tasks are non-trivial |
+| Zero-Shot LLM | 0/30 (5 ep/task) | qwen2.5:3b pilot — no hints, autonomous only |
+| Hint-Guided LLM | 24/30 (5 ep/task) | SOP-guided debug baseline — not autonomous capability |
+| Oracle | 30/30 (5 ep/task) | Deterministic scripted upper bound — proves solvability |
 
-### 4. Cross-Team Launch Readiness
-Customer Success must discover a private partner commitment, hand it to Product, Engineering must inspect and document a Jira blocker, Product must capture evidence in the readiness sheet, Engineering Management must approve, and Product must record approval, schedule the review and announce readiness.
+Zero-shot and hint-guided both use qwen2.5:3b via Ollama. Larger models expected to score higher.
+Hint-guided result validates task and reward design, not LLM intelligence.
 
-Research properties: private information, cross-agent dependency, permission asymmetry, five-app workflow, evidence grounding, approval chain.
-
-### 5. Budget Approval
-Engineering estimates a project cost on a Jira ticket, a manager approves it, and the approval must be recorded in the budget tracker sheet (only the product manager may write the sheet) and announced in the engineering Slack channel.
-
-Research properties: strict RBAC enforcement, multi-step approval chain, sheet-write permission boundary, cross-app coordination.
-
-### 6. Vendor Onboarding
-A new vendor (TechNova Solutions) must be onboarded: Legal must clear the contract ticket, IT must confirm provisioning, the Engineering Manager must approve procurement, the vendor tracker sheet must be updated to ACTIVE (only pm_01 may write), a kickoff meeting must be scheduled, and completion announced in the procurement channel.
-
-Research properties: parallel prerequisite subgoals, strict RBAC on sheet writes, multi-agent role separation, five-app workflow.
-
-## Architecture
-
-```text
-Policy / multi-agent controller
-        |
-        v
-EnterpriseEnv
-        |
-        +--> filtered agent observation
-        +--> semantic tool action
-        |
-        v
-Gmail / Slack / Jira / Calendar / Sheets simulators
-        |
-        v
-Repository / service layer
-        |
-        v
-SQLite shared company state
-        |
-        +--> private deterministic verifier
-        +--> reward engine
-        +--> audit / trajectory log
+### Observation structure (per agent, role-filtered)
+```python
+obs = {
+    "agent":    {employee_id, name, role, team_id},
+    "inbox":    [email headers],     # body requires read_email
+    "channels": [channel records],   # only channels agent belongs to
+    "calendar": [event records],     # own calendar only
+    "sheets":   [{sheet_id, role}],
+    "task":     {id, name, instruction}
+}
 ```
 
-The evaluator state and agent observation are deliberately separated. Evaluator-only keys (`progress`, `subgoals`, `reward_components`) are nested under `info["eval"]` — invisible to RL policies. The agent-facing `info` contains only `success`, `message`, and `step`. Agent observations contain only identity, inbox headers, accessible channels, calendar, and the high-level task instruction.
+Evaluator state (`progress`, `subgoals`, `reward_components`) lives in `info["eval"]` — never exposed to the policy.
 
-## Install and run
+---
 
-Python 3.10+ is recommended.
+## Factory
+
+### Factory V1 — ScenarioFactory (all 6 tasks, implemented)
+
+Generates reproducible scenario variants across seed × difficulty × train/dev/test splits.
+
+```bash
+# Generate a dataset
+python scripts/generate_dataset.py \
+    --output generated_scenarios \
+    --train 1000 --dev 200 --test 500 \
+    --difficulty hard --seed 42
+```
+
+Difficulty presets: `easy` (2 distractors) / `medium` (6) / `hard` (15) / `adversarial` (30).
+Splits are seed-disjoint — the model never sees a training seed at test time.
+
+### Factory V2 — Generated Worlds (vendor_onboarding vertical slice, prototype)
+
+Adds entity-level world generation: different employee names, emails, vendor names, and ticket IDs per seed.
+A policy trained across seeds cannot memorize ticket IDs — it must learn the workflow.
+
+```bash
+# Seed 42: Smart Metrics, METR-401/402/403, sha256:841edac7c2667c37
+python scripts/generate_environment.py --seed 42 --run-oracle
+
+# Seed 43: Stellar Services, SERV-401/402/403, sha256:cbebc420d7920829
+python scripts/generate_environment.py --seed 43 --run-oracle
+```
+
+Factory V2 validates the generative architecture on vendor onboarding as a vertical slice.
+The same `TaskSpec → world generation → validation` pipeline is designed to extend across
+task families. Productionization would expand generators and automated QA coverage rather
+than require a new core architecture.
+
+**Status:** proof-of-concept on 1 of 6 tasks. ScenarioFactory covers all 6 for seed/difficulty variation.
+
+---
+
+## Installation
+
+Python 3.10+ recommended.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # macOS/Linux
-# .venv\Scripts\activate         # Windows PowerShell/CMD equivalent
-python -m pip install --upgrade pip
-pip install -e '.[dev]'
-pytest -q
-python examples/customer_incident_demo.py
-python scripts/run_benchmark.py --task all --episodes 10
+# .venv\Scripts\Activate.ps1       # Windows PowerShell
+
+pip install -e ".[dev]"
+pytest -q                          # 118 passed
 ```
 
-Optional RL packages:
-
+Optional extras:
 ```bash
-pip install -e '.[rl,dev]'
+pip install -e ".[rl]"    # PettingZoo AEC adapter (experimental)
+pip install -e ".[ui]"    # Streamlit dashboard
 ```
 
-## Useful commands
+---
 
-Run one benchmark:
-
-```bash
-python scripts/run_benchmark.py --task customer_incident --episodes 100
-python scripts/run_benchmark.py --task product_launch --episodes 100
-python scripts/run_benchmark.py --task meeting_conflict --episodes 100
-python scripts/run_benchmark.py --task launch_readiness --episodes 100
-python scripts/run_benchmark.py --task budget_approval --episodes 100
-python scripts/run_benchmark.py --task vendor_onboarding --episodes 100
-```
-
-Inspect the seeded company:
+## Quick Demo
 
 ```bash
-python scripts/inspect_company.py
-```
+# Oracle — 100% all 6 tasks
+python scripts/run_benchmark.py --task all --episodes 5
 
+# Trajectory HTML viewer
+python scripts/export_trajectory.py --task vendor_onboarding --seed 42
+start benchmark_results/vendor_onboarding_trajectory.html   # Windows
+# open ...html   # macOS
 
-## New research infrastructure in v1.3 — factory_v2 (Generated Worlds)
-
-`factory_v2` adds a second factory layer on top of `ScenarioFactory`. While ScenarioFactory generates scenario variants (seed × difficulty × split) for all 6 tasks, factory_v2 generates entire **entity-level worlds** from a seed: different employee names, emails, vendor names, ticket IDs, sheet IDs, and channel IDs — all deterministically derived, validated, and fingerprinted.
-
-```bash
-# Generate and validate a world — seed 42
+# Factory V2 generated world
 python scripts/generate_environment.py --seed 42 --run-oracle
-
-# Generate a different world — different vendor, employees, ticket IDs
 python scripts/generate_environment.py --seed 43 --run-oracle
 
-# Show the full JSON manifest
-python scripts/generate_environment.py --seed 42 --json
-```
+# Hint vs zero-shot comparison
+python scripts/compare_hint_vs_zeroshot.py
 
-Key properties:
-- `CompanySpec(seed, scenario, difficulty)` → `GeneratedWorld` (deterministic, isolated RNG)
-- SHA-256 fingerprint: same seed → same fingerprint; different seed → different fingerprint
-- `WorldValidator`: 5-check structural validation without a live database
-- `GeneratedVendorOnboardingTask`: all verifiers use world entity IDs, not hardcoded strings
-- `GeneratedVendorOnboardingBaseline`: oracle scripted policy using generated IDs
-- Agent IDs (`pm_01`, `eng_01`, etc.) stay fixed — only display names and emails vary
-- `schema_version: 2` manifests (legacy ScenarioFactory = version 1, untouched)
-- 48 dedicated tests: determinism, diversity, fingerprint, validator, employee/vendor structure, manifest, oracle solvability (5 seeds), cross-app propagation, legacy regression
-
-Current scope: entity-generation is implemented for `vendor_onboarding` as proof-of-concept. `ScenarioFactory` continues to cover all 6 tasks for seed/difficulty variation.
-
-## New research infrastructure in v1.2
-
-- `SheetsApp`: spreadsheet access and mutation with membership roles.
-- `launch_readiness`: a genuinely cross-agent five-app task.
-- `ScenarioFactory`: easy/medium/hard/adversarial generation plus disjoint train/dev/test manifests.
-- `scripts/replay_episode.py`: deterministic trajectory replay.
-- failure taxonomy: looping, retrieval, permission, constraint, tool, policy and horizon failures.
-- sample generated split manifests under `generated_scenarios/`.
-
-See `docs/NEW_UPGRADES.md`, `docs/factory.md`, `docs/rl_interface.md`, and `docs/replay_and_failures.md`.
-
-## Reward design
-
-The reward is based on task progress and useful state changes, not on app usage:
-
-```text
-reward = useful_action_or_redundancy
-       + newly_unlocked_subgoal_progress
-       + useful_coordination_bonus
-       + terminal_success
-       + step_cost
-       + invalid/timeout penalties
-```
-
-A successful action with no state/progress change receives the redundant-action penalty. This blocks reward farming from repeated reads.
-
-## Factory path
-
-`ScenarioFactory` now implements reproducible scenario blueprints, difficulty presets, deterministic distractor injection, and train/dev/test manifest generation. It validates that generated/reset scenarios:
-
-- start at zero progress,
-- reference only valid dependency nodes,
-- contain an acyclic subgoal graph.
-
-Generate sample splits with `python scripts/generate_dataset.py --output generated_scenarios --train 100 --dev 20 --test 50 --difficulty hard`.
-
-**Scope note:** `ScenarioFactory` generates reproducible scenario variants across distractor density and seed for all 6 tasks. Entity IDs, agent names, org topology, and DAG structure are fixed per task family — splits are seed-disjoint but not entity-disjoint. `factory_v2` (v1.3) adds entity-level world generation for `vendor_onboarding`: different employee names/emails and vendor identities per seed, with SHA-256 fingerprinting and structural validation. Extension to remaining 5 tasks is the planned next step.
-
-## Design principles
-
-1. One source of truth across apps.
-2. Thin app simulators, not SaaS clones.
-3. Partial/asymmetric observations.
-4. Search and discovery before direct mutation.
-5. Heterogeneous employee permissions.
-6. Dependency-rich tasks with multiple valid action interleavings.
-7. State-based deterministic verification.
-8. Reward progress/outcome, not clicks/tool calls.
-9. Seeded reproducibility and inspectable traces.
-10. Build a research instrument first; UI is only a debugger/demo surface.
-
-## LLM benchmark — five providers (three FREE, no credit card)
-
-All produce JSON + CSV results under `benchmark_results/`.
-
-### Option A — Google Gemini (FREE — recommended for Windows)
-
-```powershell
-# Get free key at https://aistudio.google.com/app/apikey
-$env:GEMINI_API_KEY="AIza..."
-python scripts/run_llm_benchmark.py --provider gemini --task customer_incident --episodes 1
-python scripts/run_llm_benchmark.py --provider gemini --task all --episodes 3
-```
-
-Default model: `gemini-1.5-flash`. Typical latency: ~1–2 s/call.
-
-### Option B — Alibaba Qwen via DashScope (FREE)
-
-```powershell
-# Get free key at https://dashscope.aliyuncs.com
-$env:DASHSCOPE_API_KEY="sk-..."
-python scripts/run_llm_benchmark.py --provider qwen --task customer_incident --episodes 1
-python scripts/run_llm_benchmark.py --provider qwen --task all --episodes 3
-```
-
-Default model: `qwen-turbo`. Also available: `qwen-plus`, `qwen-max`.
-
-### Option C — Groq Cloud (FREE, fastest)
-
-```powershell
-# Get free key at https://console.groq.com
-$env:GROQ_API_KEY="gsk_..."
-python scripts/run_llm_benchmark.py --provider groq --task all --episodes 3
-```
-
-Default model: `llama-3.1-8b-instant`. Override with `--model llama-3.3-70b-versatile`.
-
-### Option D — Ollama (local, no API key, slow on CPU)
-
-```powershell
-ollama pull qwen2.5:7b
-python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:7b --task customer_incident --episodes 1
-```
-
-Expect ~7–10 s/call on CPU; use a GPU or a hosted provider for repeated benchmarking.
-
-### Centralized vs decentralized experiment
-
-```powershell
-python scripts/run_llm_benchmark.py --provider gemini --task all --episodes 3 --mode centralized  --output benchmark_results/gemini_centralized.json
-python scripts/run_llm_benchmark.py --provider gemini --task all --episodes 3 --mode decentralized --output benchmark_results/gemini_decentralized.json
-```
-
-See `RUN_WINDOWS_FREE_LLM.md` for the complete Windows/VS Code step-by-step guide.
-
-## Final validation
-
-The packaged validation report is in `docs/final_validation.md`. The improved build is checked with **118 automated tests** (70 original environment tests + 48 factory_v2 tests). Coverage includes: negation-hardening (pre- and post-keyword negation patterns), info-leakage prevention (evaluator state separated from agent-facing info), task solvability, permission enforcement, factory_v2 determinism + diversity + fingerprint + oracle solvability across 5 seeds, cross-app entity propagation, manifest schema v2, and legacy regression.
-
-## Local PC quick start
-
-### Windows PowerShell
-
-```powershell
-python -m venv .venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
-pytest -q
-python examples/customer_incident_demo.py
-python scripts/compare_baselines.py --episodes 25
-python scripts/export_trajectory.py --task customer_incident --seed 42
-```
-
-Or run `powershell -ExecutionPolicy Bypass -File scripts/quickstart_windows.ps1`.
-
-### macOS/Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -e '.[dev]'
-pytest -q
-python examples/customer_incident_demo.py
-python scripts/compare_baselines.py --episodes 25
-python scripts/export_trajectory.py --task customer_incident --seed 42
-```
-
-### Optional trajectory UI
-
-```bash
-pip install -e '.[ui]'
+# Streamlit dashboard
 streamlit run ui/app.py
 ```
 
-### Optional PettingZoo adapter
+---
+
+## Tests
 
 ```bash
-pip install -e '.[rl]'
+pytest -q    # 118 passed, 0 failed, 0 flaky
 ```
 
-## Submission assets
+- 70 core environment tests: task solvability, permission enforcement, negation-hardened verifiers,
+  evaluator/agent info separation, reward components
+- 48 factory_v2 tests: determinism, diversity, fingerprint, validator, oracle solvability (5 seeds),
+  cross-app propagation, legacy regression
 
-`deliverables/` contains the final submission checklist, presentation content, a 4-minute demo script, and a note about the required genuine Claude Code/Cursor prompt trace. The prompt trace must be exported from the actual development tool rather than fabricated.
+---
 
-## Docker + Ollama reproducible run
+## LLM Benchmark
 
-The recommended evaluator path is Docker Compose because it removes the two most common local failures: an Ollama server that is not running and a model that was never pulled.
+Five providers supported (three free, no credit card):
+
+```bash
+# Ollama (local, no key)
+python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b --task all --episodes 5
+
+# Gemini (free — recommended for Windows, fastest)
+$env:GEMINI_API_KEY="AIza..."
+python scripts/run_llm_benchmark.py --provider gemini --task all --episodes 5
+
+# Groq (free, fast)
+$env:GROQ_API_KEY="gsk_..."
+python scripts/run_llm_benchmark.py --provider groq --task all --episodes 5
+
+# Zero-shot (no hints)
+python scripts/run_llm_benchmark.py --provider ollama --no-hints --task all --episodes 5
+```
+
+See `RUN_WINDOWS_FREE_LLM.md` for the Windows step-by-step guide.
+
+---
+
+## Limitations
+
+- Turn-based sequential execution — true parallel MARL requires an action encoder on top
+- PettingZoo AEC adapter is experimental, not fully tested with standard MARL libraries
+- Entity IDs fixed per task family — splits are seed-disjoint but not entity-disjoint (Factory V1)
+- Zero-shot evaluated on qwen2.5:3b only — result is model-dependent, not a ceiling
+- Factory V2 entity-level generation implemented for vendor_onboarding only (prototype)
+- No Figma, GitHub, HRMS, or finance system simulators in this version
+
+---
+
+## Submission Assets
+
+| Asset | Location |
+|---|---|
+| Slide deck content | `deliverables/PRESENTATION_CONTENT.md` |
+| Demo script | `deliverables/DEMO_SCRIPT.md` |
+| Development prompt trace | `deliverables/development_prompt_trace.md` |
+| Pre-run benchmark results | `benchmark_results/` |
+| RL interface reference | `docs/rl_interface.md` |
+
+---
+
+## Docker (Reproducible Ollama Run)
 
 ```bash
 cp .env.example .env
-# optional: edit OLLAMA_MODEL, TASK, EPISODES, MODE
 docker compose up --build --abort-on-container-exit benchmark
 ```
 
-Compose starts Ollama, waits for it to become healthy, pulls the configured model into a persistent volume, runs environment/Ollama diagnostics, and then launches the LLM benchmark. Results are written to `benchmark_results/` on the host.
+Compose starts Ollama, waits for health, pulls the configured model, and runs the benchmark.
+Results are written to `benchmark_results/` on the host.
 
-Useful variants:
+---
 
-```bash
-OLLAMA_MODEL=qwen2.5:7b TASK=customer_incident EPISODES=1 docker compose up --build --abort-on-container-exit benchmark
-TASK=meeting_conflict MODE=decentralized docker compose up --build --abort-on-container-exit benchmark
-```
+## Design Principles
 
-For an already-running host Ollama installation, diagnose before benchmarking:
-
-```bash
-python scripts/diagnose.py --model qwen2.5:3b
-python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b --task customer_incident --episodes 1
-```
-
-### Why the previous Ollama run failed
-
-The saved failed trajectory used natural-language searches such as `authentication outage` and `production authentication outage`. The old repository implementation required the complete query string to occur contiguously in the target text, so semantically correct searches returned zero results. Small local models then tended to retry equivalent searches until the duplicate-action guard stopped the episode. Search now uses deterministic lexical term matching and ranking, preserving task difficulty while making the simulated enterprise search tool behave realistically.
-
-## Baseline taxonomy and benchmark credibility
-
-Four baselines are included. Their intended use and credibility differ:
-
-| Baseline | Score | Credibility |
-|---|---|---|
-| **Oracle** | ~100 % | Deterministic rule-based upper bound. Confirms the task is solvable. |
-| **Hint-guided / SOP-guided** | ~93 % | Receives exact ticket IDs, cell addresses, and verbatim JSON payloads in its context. **Not evidence of autonomous capability** — treat as an oracle debug baseline or SOP execution check, not as an LLM intelligence score. |
-| **Zero-shot LLM** | 0–10 % | No hints; tests genuine autonomous multi-agent reasoning on novel task instances. The meaningful research number. |
-| **Random** | ~0 % | Action-space lower bound. Confirms the reward function is not trivially hackable. |
-
-When citing results, always report the zero-shot score. The hint-guided score should be labeled "SOP-guided debug baseline (hint-injected)" to avoid inflating perceived LLM capability.
-
-### Research integrity
-
-The LLM policy still receives only agent-visible observations and actual tool results. Search ranking, diagnostics, and retry handling do not inspect hidden verifier state or execute business actions for the policy. The deterministic verifier remains the source of truth for success.
+1. One source of truth across all apps (SQLite)
+2. Thin app simulators — not SaaS clones
+3. Partial, asymmetric per-agent observations
+4. Search and discovery before direct mutation
+5. Heterogeneous permissions enforced at every action
+6. Dependency-rich tasks with valid action interleavings
+7. State-based deterministic verification
+8. Reward progress and outcome, not clicks
+9. Seeded reproducibility with inspectable traces
+10. Research instrument first — UI is a debug surface

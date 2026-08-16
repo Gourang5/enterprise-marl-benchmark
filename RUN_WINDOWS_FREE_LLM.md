@@ -16,7 +16,7 @@ python -m pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-Verify everything works (should show **70 passed**):
+Verify everything works (should show **118 passed**):
 
 ```powershell
 pytest -q

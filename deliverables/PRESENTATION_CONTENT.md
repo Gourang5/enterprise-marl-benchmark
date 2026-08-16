@@ -1,5 +1,5 @@
 # Enterprise Multi-Agent RL Benchmark — Slide Deck
-## Presentation Content v1.3  |  70 tests pass  |  6 tasks  |  5 agents  |  5 apps
+## Presentation Content v1.3  |  118 tests pass  |  6 tasks  |  5 agents  |  5 apps
 
 ---
 
@@ -16,7 +16,7 @@
 
 - 5 heterogeneous agents · 5 simulated apps · 6 dependency-gated tasks
 - Shared persistent state · Deterministic state-based evaluator
-- 70 automated tests · Fully reproducible from seed
+- 118 automated tests · Fully reproducible from seed
 
 **Visual suggestion:** central "company" node with 5 app nodes (Gmail, Slack, Jira, Calendar, Sheets)
 around it, 5 small agent icons below. Clean, minimal.
@@ -36,7 +36,7 @@ around it, 5 small agent icons below. Clean, minimal.
 | Evaluation | String match / LLM judge | Deterministic DB state check |
 
 Enterprise work demands all of these simultaneously.
-No existing open benchmark covers all dimensions.
+This benchmark is designed to combine all of these dimensions within a single evaluation environment.
 
 **Visual suggestion:** side-by-side comparison table, cells color-coded green (this benchmark)
 vs grey (typical benchmarks).
@@ -226,12 +226,12 @@ Random (0%)  ──────────────────────�
                  Hint-Guided LLM (93%, qwen2.5:3b)
 ```
 
-| Policy | SR | Notes |
+| Policy | Result | Notes |
 |---|---|---|
-| Random | 0% all 6 tasks | Lower bound confirmed — tasks non-trivial |
-| Zero-Shot LLM | 0% (1 ep/task) | qwen2.5:3b; larger models expected higher |
-| Hint-Guided LLM | 93% (5 ep/task) | Language policy with procedural guidance; 2 failures are model-side param errors |
-| Oracle / Deterministic | 100% all 6 tasks | Upper bound; proves solvability |
+| Random | 0/30 episodes | Lower bound confirmed — tasks non-trivial |
+| Zero-Shot LLM | 0/30 episodes (5 ep/task) | qwen2.5:3b pilot; larger models expected higher |
+| Hint-Guided LLM | 24/30 episodes (5 ep/task) | SOP-guided debug baseline — not evidence of autonomous capability |
+| Oracle / Deterministic | 30/30 episodes | Upper bound; proves solvability |
 
 ### Infrastructure
 - HTML trajectory viewer + JSON replay (`scripts/export_trajectory.py`)
@@ -320,7 +320,7 @@ to obs. Small lock icon on info["eval"]. Color-code: obs = blue, action = green,
 
 ## Slide 13 — Research Questions Enabled
 
-**The 93-point gap between zero-shot and guided performance is the open problem.**
+**The 80-point gap between zero-shot (0/30) and hint-guided (24/30) performance is the open problem.**
 
 | Research Question | Method | Benchmark Feature |
 |---|---|---|
@@ -344,8 +344,8 @@ python scripts/export_trajectory.py --task vendor_onboarding --seed 42
 # 3. Use trajectories for BC / imitation learning
 ```
 
-**Next step**: Behavioral Cloning on hint-guided trajectories → PPO against shaped reward
-→ entity-disjoint OOD evaluation.
+**Next step**: Behavioral Cloning on oracle/hint-guided trajectories → PPO against shaped reward
+→ entity-disjoint OOD evaluation via Factory V2 generalized across task families.
 
 **Visual suggestion:** bar chart with 4 policies on x-axis (Random / Zero-Shot / Hint-Guided / Oracle),
 success rate on y-axis (0% / 0% / 93% / 100%). Bracket spanning the gap with label "Open Research Gap".
@@ -560,17 +560,32 @@ Oracle bar at 100% (green) across all levels; Random bar at 0% (grey) across all
 | 5 apps · 5 agents · role-based permissions | ✅ |
 | Dependency-gated subgoal DAGs | ✅ |
 | Deterministic DB-state verification | ✅ |
-| Oracle 100% · Random 0% · Hint-guided 93% | ✅ |
+| Oracle 30/30 · Hint-guided 24/30 · Zero-Shot 0/30 (5 ep/task each) | ✅ |
 | ScenarioFactory: seeds × difficulty × splits | ✅ |
 | Scenario manifests with validator_status | ✅ |
 | Trajectory export, replay, Streamlit dashboard | ✅ |
 | Docker Compose reproducible deployment | ✅ |
-| 70 automated tests · 0 flaky | ✅ |
+| 118 automated tests · 0 flaky | ✅ |
+| Factory V2: entity-level world generation (vendor_onboarding vertical slice) | ✅ Prototype |
+
+### Feature Status
+
+| IMPLEMENTED | PROTOTYPE / EXPERIMENTAL | ROADMAP |
+|---|---|---|
+| 6 tasks + DAG verifiers | Factory V2 world generation (1 task) | Factory V2 for all 6 tasks |
+| ScenarioFactory (all 6 tasks) | PettingZoo AEC adapter | DAG synthesizer |
+| Oracle + hint-guided + zero-shot baselines | SHA-256 world fingerprinting | Org/identity generator |
+| Deterministic DB-state verification | WorldValidator structural checks | Automated verifier generation |
+| Role-based permissions (RBAC) | — | Entity-disjoint OOD splits |
+| Shaped reward + anti-hacking logic | — | Large-scale curriculum calibration |
+| Trajectory export + replay | — | — |
+| Streamlit dashboard | — | — |
+| Docker Compose deployment | — | — |
 
 ### The research question this benchmark opens
 
 > Can autonomous multi-agent systems close the gap between
-> **zero-shot performance (0%)** and **procedurally-guided performance (93%)**
+> **zero-shot performance (0/30 episodes)** and **procedurally-guided performance (24/30 episodes)**
 > in realistic enterprise coordination workflows?
 
 **Next steps**: Behavioral Cloning on hint-guided trajectories →
