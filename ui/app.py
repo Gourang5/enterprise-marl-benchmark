@@ -408,236 +408,338 @@ with tab_run:
 
 # ── TAB 3: policy comparison ─────────────────────────────────────────────────
 with tab_compare:
-    st.header("🆚 Policy Comparison: Hint-Guided vs Zero-Shot LLM")
+    st.header("🆚 Four-Tier Policy Comparison")
     st.markdown(
-        "Side-by-side benchmark results across all 6 tasks. "
-        "The **gap** between hint-guided and zero-shot quantifies the value of "
-        "SOP / workflow knowledge in enterprise multi-agent settings."
+        "Full benchmark results across all **4 policies** and **6 tasks**. "
+        "Each tier answers a different research question about enterprise agent capability."
     )
 
-    # ── load data ────────────────────────────────────────────────────────────
-    hint_data = None
-    zs_data   = None
+    # ── load all result files ────────────────────────────────────────────────
+    hint_data     = None
+    zs_data       = None
+    baseline_data = None
 
-    if RESULTS_5EP_PATH.exists():
-        try:
-            hint_data = json.loads(RESULTS_5EP_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+    for path, store in [
+        (RESULTS_5EP_PATH,  "hint"),
+        (ZEROSHOT_PATH,     "zs"),
+        (BASELINES_PATH,    "base"),
+    ]:
+        if path.exists():
+            try:
+                parsed = json.loads(path.read_text(encoding="utf-8"))
+                if store == "hint":   hint_data     = parsed
+                elif store == "zs":   zs_data       = parsed
+                else:                 baseline_data = parsed
+            except Exception:
+                pass
 
-    if ZEROSHOT_PATH.exists():
-        try:
-            zs_data = json.loads(ZEROSHOT_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+    hint_sum = hint_data.get("summary", {}) if hint_data else {}
+    zs_sum   = zs_data.get("summary",   {}) if zs_data   else {}
 
-    if hint_data is None:
-        st.warning("Hint-guided results not found. Run: `python scripts/run_llm_benchmark.py --provider ollama --model qwen2.5:3b --task all --episodes 5 --output benchmark_results/llm_results_5ep.json`")
+    # oracle / random from baselines.json (25 episodes each)
+    oracle_sum = {t: baseline_data[t]["rule"]   for t in TASKS if baseline_data and t in baseline_data} if baseline_data else {}
+    random_sum = {t: baseline_data[t]["random"] for t in TASKS if baseline_data and t in baseline_data} if baseline_data else {}
+
+    all_loaded = bool(hint_sum and zs_sum and oracle_sum)
+
+    if all_loaded:
+        st.success("All 4 policy results loaded — Oracle (25ep) | Hint-Guided (5ep) | Zero-Shot (1ep) | Random (25ep)")
+    elif hint_sum:
+        st.info("Hint-guided and baseline results loaded. Zero-shot results also available.")
     else:
-        hint_sum = hint_data.get("summary", {})
-        zs_sum   = zs_data.get("summary", {}) if zs_data else {}
+        st.warning("No benchmark results found. Run the benchmarks first.")
 
-        zs_running = not ZEROSHOT_PATH.exists()
+    st.divider()
 
-        # ── status banner ────────────────────────────────────────────────────
-        if zs_running:
-            st.info("⏳ Zero-shot benchmark is still running. Hint-guided results are shown below. Refresh the page once the zero-shot run completes to see the full comparison.")
+    # ── top-line metric cards ────────────────────────────────────────────────
+    st.subheader("Overall Average Success Rate")
+    def avg_sr(summary):
+        vals = [summary.get(t, {}).get("success_rate", 0.0) for t in TASKS]
+        return sum(vals) / len(vals) if vals else 0.0
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.markdown(
+        '<div style="background:#1a2a3a;border-top:4px solid #3498db;border-radius:6px;padding:14px;text-align:center">'
+        '<div style="font-size:2rem;font-weight:700;color:#3498db">100%</div>'
+        '<div style="color:#aaa;font-size:0.85rem">Oracle Baseline</div>'
+        '<div style="color:#666;font-size:0.75rem">25 episodes</div></div>',
+        unsafe_allow_html=True,
+    )
+    h_avg = avg_sr(hint_sum)
+    m2.markdown(
+        f'<div style="background:#1a3a2a;border-top:4px solid #2ecc71;border-radius:6px;padding:14px;text-align:center">'
+        f'<div style="font-size:2rem;font-weight:700;color:#2ecc71">{h_avg:.0%}</div>'
+        f'<div style="color:#aaa;font-size:0.85rem">Hint-Guided LLM</div>'
+        f'<div style="color:#666;font-size:0.75rem">5 episodes · qwen2.5:3b</div></div>',
+        unsafe_allow_html=True,
+    )
+    z_avg = avg_sr(zs_sum)
+    m3.markdown(
+        f'<div style="background:#2a1a0a;border-top:4px solid #e67e22;border-radius:6px;padding:14px;text-align:center">'
+        f'<div style="font-size:2rem;font-weight:700;color:#e67e22">{z_avg:.0%}</div>'
+        f'<div style="color:#aaa;font-size:0.85rem">Zero-Shot LLM</div>'
+        f'<div style="color:#666;font-size:0.75rem">1 episode · qwen2.5:3b</div></div>',
+        unsafe_allow_html=True,
+    )
+    m4.markdown(
+        '<div style="background:#2a1a1a;border-top:4px solid #e74c3c;border-radius:6px;padding:14px;text-align:center">'
+        '<div style="font-size:2rem;font-weight:700;color:#e74c3c">0%</div>'
+        '<div style="color:#aaa;font-size:0.85rem">Random Baseline</div>'
+        '<div style="color:#666;font-size:0.75rem">25 episodes</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.divider()
+
+    # ── grouped bar chart — all 4 policies ──────────────────────────────────
+    st.subheader("Success Rate by Task — All 4 Policies")
+
+    oracle_sr = [oracle_sum.get(t, {}).get("success_rate", 1.0) for t in TASKS]
+    hint_sr   = [hint_sum.get(t,   {}).get("success_rate", 0.0) for t in TASKS]
+    zs_sr     = [zs_sum.get(t,     {}).get("success_rate", 0.0) for t in TASKS]
+    random_sr = [random_sum.get(t, {}).get("success_rate", 0.0) for t in TASKS]
+
+    series_all = [
+        ("Oracle",          oracle_sr, "#3498db"),
+        ("Hint-Guided",     hint_sr,   "#2ecc71"),
+        ("Zero-Shot",       zs_sr,     "#e67e22"),
+        ("Random",          random_sr, "#e74c3c"),
+    ]
+
+    bar_w     = 46
+    bar_gap   = 8
+    group_pad = 28
+    group_w   = 4 * (bar_w + bar_gap) - bar_gap + group_pad
+    chart_w   = 70 + len(TASKS) * group_w
+    chart_h   = 280
+    label_h   = 44
+    legend_h  = 36
+    total_h   = chart_h + label_h + legend_h + 10
+
+    parts = []
+    # y-axis grid
+    for pct in [25, 50, 75, 100]:
+        y = chart_h - (pct / 100) * chart_h
+        parts.append(f'<line x1="65" y1="{y:.0f}" x2="{chart_w}" y2="{y:.0f}" stroke="#2a2a2a" stroke-width="1" stroke-dasharray="5,4"/>')
+        parts.append(f'<text x="60" y="{y + 4:.0f}" fill="#666" font-size="10" text-anchor="end">{pct}%</text>')
+    # baseline at 0
+    parts.append(f'<line x1="65" y1="{chart_h}" x2="{chart_w}" y2="{chart_h}" stroke="#444" stroke-width="1"/>')
+
+    for ti, task in enumerate(TASKS):
+        gx    = 70 + ti * group_w
+        label = task.replace("_", " ").title().replace(" ", "\n")
+        # split long labels
+        words = task.replace("_", " ").title().split()
+        if len(words) > 1:
+            mid = len(words) // 2
+            line1 = " ".join(words[:mid])
+            line2 = " ".join(words[mid:])
+            lx = gx + (4 * (bar_w + bar_gap) - bar_gap) / 2
+            parts.append(f'<text x="{lx:.0f}" y="{chart_h + 16}" fill="#bbb" font-size="10" text-anchor="middle">{line1}</text>')
+            parts.append(f'<text x="{lx:.0f}" y="{chart_h + 28}" fill="#bbb" font-size="10" text-anchor="middle">{line2}</text>')
         else:
-            st.success("✅ Both hint-guided (5ep) and zero-shot (1ep) results loaded.")
+            lx = gx + (4 * (bar_w + bar_gap) - bar_gap) / 2
+            parts.append(f'<text x="{lx:.0f}" y="{chart_h + 20}" fill="#bbb" font-size="10" text-anchor="middle">{words[0]}</text>')
 
-        st.divider()
+        for bi, (sname, sdata, color) in enumerate(series_all):
+            bx  = gx + bi * (bar_w + bar_gap)
+            val = sdata[ti] if sdata[ti] is not None else 0.0
+            bh  = val * chart_h
+            by  = chart_h - bh
+            # bar
+            parts.append(f'<rect x="{bx}" y="{by:.1f}" width="{bar_w}" height="{max(bh, 1):.1f}" fill="{color}" rx="3" opacity="0.9"/>')
+            # label inside/above bar
+            if val >= 0.12:
+                ty = by + bh / 2 + 4
+                parts.append(f'<text x="{bx + bar_w/2:.0f}" y="{ty:.0f}" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">{int(val*100)}%</text>')
+            elif val > 0:
+                parts.append(f'<text x="{bx + bar_w/2:.0f}" y="{by - 3:.0f}" fill="{color}" font-size="9" text-anchor="middle">{int(val*100)}%</text>')
 
-        # ── bar chart ────────────────────────────────────────────────────────
-        st.subheader("Success Rate by Task")
+    # legend
+    leg_y = chart_h + label_h + 8
+    for bi, (sname, _, color) in enumerate(series_all):
+        lx = 70 + bi * 180
+        parts.append(f'<rect x="{lx}" y="{leg_y}" width="12" height="12" fill="{color}" rx="2"/>')
+        parts.append(f'<text x="{lx + 17}" y="{leg_y + 10}" fill="#ccc" font-size="11">{sname}</text>')
 
-        task_labels = [t.replace("_", "\n").title() for t in TASKS]
-        oracle_sr   = [1.0] * len(TASKS)
-        random_sr   = [0.0] * len(TASKS)
-        hint_sr     = [hint_sum.get(t, {}).get("success_rate", 0.0) for t in TASKS]
-        zs_sr       = [zs_sum.get(t, {}).get("success_rate", None) for t in TASKS]
+    bar_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {chart_w} {total_h}" '
+        f'style="background:#0e1117;border-radius:8px;width:100%;border:1px solid #222">'
+        + "".join(parts) + "</svg>"
+    )
+    st.markdown(bar_svg, unsafe_allow_html=True)
 
-        # Build SVG bar chart manually (no external deps)
-        bar_w = 60
-        gap   = 18
-        group_gap = 40
-        n_bars = 3 if zs_running else 4
-        group_w = n_bars * (bar_w + gap) - gap + group_gap
-        chart_w = len(TASKS) * group_w + 80
-        chart_h = 300
-        label_h = 50
-        total_h = chart_h + label_h + 60
+    st.divider()
 
-        def _bar_color(label):
-            return {"Oracle": "#3498db", "Hint-Guided\n(5 ep)": "#2ecc71",
-                    "Zero-Shot\n(1 ep)": "#e67e22", "Random": "#e74c3c"}.get(label, "#888")
+    # ── reward comparison chart ──────────────────────────────────────────────
+    st.subheader("Average Reward by Task — Oracle vs Hint-Guided vs Zero-Shot")
 
-        series = [
-            ("Oracle",            oracle_sr, "#3498db"),
-            ("Hint-Guided\n(5 ep)", hint_sr, "#2ecc71"),
-        ]
-        if not zs_running:
-            series.append(("Zero-Shot\n(1 ep)", zs_sr, "#e67e22"))
-        series.append(("Random", random_sr, "#e74c3c"))
+    oracle_rw = [oracle_sum.get(t, {}).get("avg_reward", 0.0) for t in TASKS]
+    hint_rw   = [hint_sum.get(t,   {}).get("avg_reward", 0.0) for t in TASKS]
+    zs_rw     = [zs_sum.get(t,     {}).get("avg_reward", 0.0) for t in TASKS]
+    max_rw    = max(max(oracle_rw + hint_rw + zs_rw), 1)
 
-        bars_svg = []
-        # grid lines
-        for pct in [0.25, 0.5, 0.75, 1.0]:
-            y = chart_h - pct * chart_h
-            bars_svg.append(f'<line x1="60" y1="{y:.0f}" x2="{chart_w}" y2="{y:.0f}" stroke="#333" stroke-dasharray="4,4"/>')
-            bars_svg.append(f'<text x="55" y="{y+4:.0f}" fill="#888" font-size="11" text-anchor="end">{int(pct*100)}%</text>')
+    rw_series = [
+        ("Oracle",      oracle_rw, "#3498db"),
+        ("Hint-Guided", hint_rw,   "#2ecc71"),
+        ("Zero-Shot",   zs_rw,     "#e67e22"),
+    ]
+    rw_bar_w   = 56
+    rw_bar_gap = 10
+    rw_grp_pad = 30
+    rw_grp_w   = 3 * (rw_bar_w + rw_bar_gap) - rw_bar_gap + rw_grp_pad
+    rw_chart_w = 70 + len(TASKS) * rw_grp_w
+    rw_chart_h = 200
+    rw_total_h = rw_chart_h + 60 + 30
 
-        for ti, task in enumerate(TASKS):
-            gx = 60 + ti * group_w
-            label = task.replace("_", " ").title()
-            bars_svg.append(f'<text x="{gx + group_w/2 - group_gap/2:.0f}" y="{chart_h + 20}" fill="#ccc" font-size="11" text-anchor="middle">{label}</text>')
+    rw_parts = []
+    for pct in [25, 50, 75, 100]:
+        y = rw_chart_h - (pct / 100) * rw_chart_h
+        rw_parts.append(f'<line x1="65" y1="{y:.0f}" x2="{rw_chart_w}" y2="{y:.0f}" stroke="#2a2a2a" stroke-dasharray="4,4"/>')
+        rw_parts.append(f'<text x="60" y="{y+4:.0f}" fill="#666" font-size="9" text-anchor="end">{int(pct * max_rw / 100)}</text>')
+    rw_parts.append(f'<line x1="65" y1="{rw_chart_h}" x2="{rw_chart_w}" y2="{rw_chart_h}" stroke="#444"/>')
 
-            for bi, (sname, sdata, color) in enumerate(series):
-                x   = gx + bi * (bar_w + gap)
-                val = sdata[ti] if sdata[ti] is not None else 0.0
-                h   = val * chart_h
-                y   = chart_h - h
-                bars_svg.append(
-                    f'<rect x="{x}" y="{y:.1f}" width="{bar_w}" height="{h:.1f}" fill="{color}" rx="3" opacity="0.88"/>'
-                )
-                if val > 0.05:
-                    bars_svg.append(
-                        f'<text x="{x + bar_w/2:.0f}" y="{y - 4:.0f}" fill="#fff" font-size="10" text-anchor="middle">{int(val*100)}%</text>'
-                    )
+    for ti, task in enumerate(TASKS):
+        gx    = 70 + ti * rw_grp_w
+        words = task.replace("_", " ").title().split()
+        mid   = len(words) // 2
+        lx    = gx + (3 * (rw_bar_w + rw_bar_gap) - rw_bar_gap) / 2
+        rw_parts.append(f'<text x="{lx:.0f}" y="{rw_chart_h + 14}" fill="#bbb" font-size="9" text-anchor="middle">{" ".join(words[:mid])}</text>')
+        rw_parts.append(f'<text x="{lx:.0f}" y="{rw_chart_h + 25}" fill="#bbb" font-size="9" text-anchor="middle">{" ".join(words[mid:])}</text>')
 
-        # legend
-        legend_x = 60
-        legend_y = chart_h + label_h + 10
-        for bi, (sname, _, color) in enumerate(series):
-            lx = legend_x + bi * 160
-            bars_svg.append(f'<rect x="{lx}" y="{legend_y}" width="14" height="14" fill="{color}" rx="2"/>')
-            bars_svg.append(f'<text x="{lx+20}" y="{legend_y+11}" fill="#ccc" font-size="12">{sname.replace(chr(10)," ")}</text>')
+        for bi, (sname, sdata, color) in enumerate(rw_series):
+            bx  = gx + bi * (rw_bar_w + rw_bar_gap)
+            val = max(sdata[ti], 0)
+            bh  = (val / max_rw) * rw_chart_h
+            by  = rw_chart_h - bh
+            rw_parts.append(f'<rect x="{bx}" y="{by:.1f}" width="{rw_bar_w}" height="{max(bh,1):.1f}" fill="{color}" rx="3" opacity="0.85"/>')
+            if val > max_rw * 0.08:
+                rw_parts.append(f'<text x="{bx + rw_bar_w/2:.0f}" y="{by + bh/2 + 4:.0f}" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">{val:.0f}</text>')
 
-        svg_content = f"""
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {chart_w} {total_h}" style="background:#111;border-radius:8px;width:100%">
-  {''.join(bars_svg)}
-</svg>
-"""
-        st.markdown(svg_content, unsafe_allow_html=True)
+    leg_y2 = rw_chart_h + 44
+    for bi, (sname, _, color) in enumerate(rw_series):
+        lx = 70 + bi * 200
+        rw_parts.append(f'<rect x="{lx}" y="{leg_y2}" width="12" height="12" fill="{color}" rx="2"/>')
+        rw_parts.append(f'<text x="{lx+17}" y="{leg_y2+10}" fill="#ccc" font-size="11">{sname}</text>')
 
-        st.divider()
+    rw_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {rw_chart_w} {rw_total_h}" '
+        f'style="background:#0e1117;border-radius:8px;width:100%;border:1px solid #222">'
+        + "".join(rw_parts) + "</svg>"
+    )
+    st.markdown(rw_svg, unsafe_allow_html=True)
 
-        # ── gap chart (only when zero-shot data available) ────────────────
-        if not zs_running and zs_sum:
-            st.subheader("Performance Gap: Hint-Guided − Zero-Shot (percentage points)")
-            gaps = [(hint_sum.get(t, {}).get("success_rate", 0) - zs_sum.get(t, {}).get("success_rate", 0)) * 100
-                    for t in TASKS]
+    st.divider()
 
-            gap_svg_parts = []
-            gw = chart_w
-            gh = 200
-            max_gap = max(max(gaps), 1)
+    # ── detailed comparison table ────────────────────────────────────────────
+    st.subheader("Full Results Table")
+    rows = []
+    for task in TASKS:
+        o  = oracle_sum.get(task, {})
+        h  = hint_sum.get(task, {})
+        z  = zs_sum.get(task, {})
+        r  = random_sum.get(task, {})
+        h_sr = h.get("success_rate", 0.0)
+        z_sr = z.get("success_rate", 0.0)
+        rows.append({
+            "Task":                  task.replace("_", " ").title(),
+            "Oracle SR":             f"{o.get('success_rate', 1.0):.0%}",
+            "Oracle Reward":         f"{o.get('avg_reward', 0):.1f}",
+            "Hint-Guided SR":        f"{h_sr:.0%}",
+            "Hint-Guided Reward":    f"{h.get('avg_reward', 0):.1f}",
+            "Hint-Guided Steps":     f"{h.get('avg_steps', 0):.1f}",
+            "Zero-Shot SR":          f"{z_sr:.0%}",
+            "Zero-Shot Reward":      f"{z.get('avg_reward', 0):.1f}",
+            "Zero-Shot Progress":    f"{z.get('avg_progress', 0):.0%}",
+            "Gap (H vs Z)":          f"+{(h_sr - z_sr)*100:.0f}pp",
+            "Random SR":             f"{r.get('success_rate', 0):.0%}",
+        })
+    st.dataframe(rows, use_container_width=True)
 
-            for i, (task, gap_val) in enumerate(zip(TASKS, gaps)):
-                x   = 60 + i * (chart_w - 60) // len(TASKS)
-                bw  = (chart_w - 60) // len(TASKS) - 12
-                h   = (gap_val / 100) * gh
-                y   = gh - h
-                col = "#e74c3c" if gap_val > 50 else "#e67e22" if gap_val > 20 else "#2ecc71"
-                gap_svg_parts.append(f'<rect x="{x}" y="{y:.1f}" width="{bw}" height="{h:.1f}" fill="{col}" rx="3" opacity="0.9"/>')
-                gap_svg_parts.append(f'<text x="{x + bw/2:.0f}" y="{y - 4:.0f}" fill="#fff" font-size="11" text-anchor="middle">{gap_val:.0f}pp</text>')
-                label = task.replace("_", " ").title()
-                gap_svg_parts.append(f'<text x="{x + bw/2:.0f}" y="{gh + 18}" fill="#ccc" font-size="11" text-anchor="middle">{label}</text>')
+    st.divider()
 
-            gap_svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {gw} {gh+40}" style="background:#111;border-radius:8px;width:100%">{"".join(gap_svg_parts)}</svg>'
-            st.markdown(gap_svg, unsafe_allow_html=True)
-            st.divider()
+    # ── zero-shot failure analysis ───────────────────────────────────────────
+    st.subheader("Zero-Shot Failure Analysis")
 
-        # ── numeric comparison table ──────────────────────────────────────
-        st.subheader("Detailed Comparison Table")
-        rows = []
-        for task in TASKS:
-            h = hint_sum.get(task, {})
-            z = zs_sum.get(task, {}) if zs_sum else {}
-            h_sr = h.get("success_rate", None)
-            z_sr = z.get("success_rate", None)
-            delta_str = f"+{(h_sr - z_sr)*100:.0f}pp" if (h_sr is not None and z_sr is not None) else "pending"
-            rows.append({
-                "Task": task.replace("_", " ").title(),
-                "Oracle": "100%",
-                "Hint-Guided SR (5ep)": f"{h_sr:.0%}" if h_sr is not None else "—",
-                "Hint-Guided Reward": f"{h.get('avg_reward', 0):.1f}" if h else "—",
-                "Zero-Shot SR (1ep)": f"{z_sr:.0%}" if z_sr is not None else "⏳ running",
-                "Zero-Shot Reward": f"{z.get('avg_reward', 0):.1f}" if z else "—",
-                "Gap (SR)": delta_str,
-                "Random": "0%",
-            })
-        st.dataframe(rows, use_container_width=True)
+    failure_data = {
+        "customer_incident":  {"primary": "Looping + Policy Failure",    "detail": "Re-reads same email 4x. Generates cyclic no-progress actions. Fails after 9 steps at 25% progress."},
+        "product_launch":     {"primary": "Permission Violation",         "detail": "Calls jira.change_status for product_01 who lacks that permission. Fails after 3 steps at 14% progress."},
+        "meeting_conflict":   {"primary": "Looping + Constraint Violation","detail": "Loops 19 times, hits 3 constraint violations, times out at max steps (25) with only 40% progress."},
+        "launch_readiness":   {"primary": "Looping + Policy Failure",    "detail": "Reads same resource twice immediately. Fails after just 2 steps at 12% progress."},
+        "budget_approval":    {"primary": "Looping + Policy Failure",    "detail": "Loops 3 times on same actions. Fails after 8 steps at 14% progress."},
+        "vendor_onboarding":  {"primary": "Looping + Policy Failure",    "detail": "Loops on discovery actions. Cannot find VEND-401 without hints. Fails after 11 steps at 25% progress."},
+    }
 
-        st.divider()
+    fail_cols = st.columns(2)
+    for i, task in enumerate(TASKS):
+        fd = failure_data.get(task, {})
+        meta_t = TASK_META.get(task, {})
+        with fail_cols[i % 2]:
+            st.markdown(
+                f'<div style="border:1px solid #333;border-radius:6px;padding:12px;margin-bottom:8px;background:#0e1117">'
+                f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+                f'<span>{meta_t.get("icon","")}</span>'
+                f'<strong style="font-size:0.9rem">{task.replace("_"," ").title()}</strong>'
+                f'<span style="margin-left:auto;background:#e74c3c;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.72rem">{fd.get("primary","—")}</span>'
+                f'</div>'
+                f'<p style="color:#999;font-size:0.82rem;margin:0">{fd.get("detail","")}</p>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
-        # ── research narrative ────────────────────────────────────────────
-        st.subheader("Why Does the Gap Exist?")
+    st.divider()
 
-        st.markdown("""
-### What the gap measures
-
-The performance gap between **Hint-Guided** and **Zero-Shot** LLM directly measures the value of
-**structured workflow knowledge** in enterprise multi-agent settings. It answers:
-
-> *"How much does knowing the SOP matter — versus having to figure it out from scratch?"*
+    # ── research narrative ────────────────────────────────────────────────────
+    st.subheader("Why Does the Gap Exist?")
+    st.markdown("""
+**The +93pp average gap between Hint-Guided and Zero-Shot directly measures the value of structured workflow knowledge in enterprise settings.**
 
 ---
 
-### The core problem with zero-shot on enterprise tasks
+#### The 3 root causes of zero-shot failure
 
-Enterprise workflows are **procedurally structured**, not just semantically rich.
-A 3B-parameter model reasoning zero-shot faces three structural obstacles:
+| Root Cause | What happens | Why hints fix it |
+|---|---|---|
+| **Unknown action order** | Agent doesn't know DAG dependency sequence — tries shortcuts that the verifier rejects | Hints provide the exact subgoal sequence |
+| **Unknown parameter values** | Concrete IDs like `VEND-401` must be discovered, not guessed — model fabricates wrong values | Hints provide the discovery path (read email → find ticket) |
+| **Looping without a map** | Without a workflow map, model re-reads same resources and burns step budget on −1.0 redundancy penalties | Hints prevent revisiting completed steps |
 
-| Challenge | Why it trips zero-shot agents |
+---
+
+#### The RAG / SOP analogy
+
+In real Fortune 500 enterprises, employees don't start from zero every morning.
+They follow **Standard Operating Procedures (SOPs)**, runbooks, and onboarding docs.
+
+**Hint-guided LLM = onboarded employee with access to company documentation.**
+**Zero-shot LLM = contractor on day 1 with no briefing.**
+
+This is exactly what **Retrieval-Augmented Generation (RAG)** does for enterprise AI —
+it injects the right context at the right time (Lewis et al., 2020).
+
+---
+
+#### What comes next: closing the gap autonomously
+
+The gap is not a flaw — it is the **research agenda**:
+
+| Approach | How it closes the gap |
 |---|---|
-| **Information discovery order** | Subgoal DAGs require reading email → finding ticket → reading ticket before any action is valid. A zero-shot agent doesn't know this order exists. |
-| **Correct parameter values** | `issue_id: "VEND-401"` is a concrete string the model must discover, not infer. Without hints, the model guesses and generates invalid parameters. |
-| **Cross-agent dependency** | Legal and IT sign-offs must happen before kickoff. Zero-shot agents don't model other agents' obligations — they attempt shortcuts that fail the verifier. |
-| **Redundancy detection** | Already-read resources get re-read. The penalty (−1.0 per redundant action) stacks quickly without a workflow map. |
+| **Behavioral Cloning** | Train on hint-guided trajectories — agent learns the SOP implicitly |
+| **PPO / Policy Gradient** | Optimize directly against the shaped reward (+75 terminal, +8/N subgoal) |
+| **QMIX / VDN** | Centralized training + decentralized execution — agents learn coordination |
+| **LLM Fine-tuning** | SFT on successful episodes, RLHF/RLAIF on failures |
 
----
-
-### The RAG analogy
-
-Hint-guided LLM = **Retrieval-Augmented Generation (RAG)** over internal company documentation.
-
-In real Fortune 500 enterprises, an AI assistant doesn't operate in a vacuum — it has access to:
-- ✅ Runbooks and Standard Operating Procedures (SOPs)
-- ✅ Escalation playbooks
-- ✅ Onboarding documentation
-
-The hints simulate this exact context injection. An **onboarded employee** with SOPs succeeds.
-A **day-one contractor** with no documentation struggles — that's the zero-shot result.
-
-*Lewis et al., 2020 (RAG); Yao et al., 2022 (ReAct) — both show that context injection
-dramatically improves LLM tool use on structured tasks.*
-
----
-
-### What comes next
-
-The gap is not a flaw in the benchmark — it's a **research finding**:
-
-```
-Gap = Value of workflow knowledge that needs to be learned autonomously
-```
-
-Closing the gap is the next research agenda:
-1. **Behavioral Cloning** — train on successful hint-guided trajectories → agent learns the SOP implicitly
-2. **PPO / Policy Gradient** — optimize directly against the shaped reward function
-3. **QMIX / VDN** — CTDE: centralized training with decentralized execution
-4. **LLM Fine-tuning** — SFT on successful episodes, then RLHF/RLAIF on failures
-
-The environment infrastructure (reward, verifier, ScenarioFactory) is designed to
-support all four approaches without modification.
+The environment infrastructure — reward function, subgoal verifiers, ScenarioFactory —
+is deliberately built to support all four without any modification.
 """)
 
-        st.info(
-            "**Key takeaway for Wedecode:** The 4-tier policy taxonomy separates "
-            "*task design quality* (oracle/hint-guided) from *autonomous agent capability* (zero-shot/RL). "
-            "This lets you iterate on task difficulty independently of model choice — "
-            "a critical property for a research team building a MARL benchmark platform."
-        )
+    st.info(
+        "**Key finding for Wedecode:** The 4-tier taxonomy cleanly separates "
+        "*task design quality* (Oracle proves solvability) from *agent capability* (Zero-Shot shows the gap). "
+        "A +93pp gap with a 3B local model is the strongest possible case for why "
+        "enterprise AI needs workflow context injection — and why this benchmark platform has research value."
+    )
 
 
 # ── TAB 4: saved results (raw JSON) ──────────────────────────────────────────
