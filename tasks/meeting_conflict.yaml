@@ -1,0 +1,8 @@
+task_id: meeting_conflict_v2
+name: Priority Meeting Conflict
+difficulty: medium
+agents: [pm_01, eng_01]
+apps: [gmail, calendar, slack]
+meaningful_tool_calls: 5-12
+horizon: 25
+capabilities: [constraint_satisfaction, distributed_observation, scheduling, information_discovery]

@@ -1,0 +1,8 @@
+valid_action: 0.5
+progress_per_full_subgoal: 8.0
+coordination_bonus: 2.0
+invalid_action: -4.0
+redundant_action: -1.0
+step_cost: -0.05
+terminal_success: 75.0
+timeout: -15.0

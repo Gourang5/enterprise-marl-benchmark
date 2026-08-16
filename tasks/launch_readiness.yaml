@@ -1,0 +1,8 @@
+task_id: launch_readiness_v1
+name: Cross-Team Launch Readiness
+difficulty: hard
+agents: [cs_01, eng_01, product_01, mgr_01]
+apps: [gmail, slack, jira, sheets, calendar]
+meaningful_tool_calls: 10-25
+horizon: 45
+capabilities: [private_information, permission_asymmetry, cross_agent_handoff, evidence_grounding, dependency_dag, sheet_tracking]

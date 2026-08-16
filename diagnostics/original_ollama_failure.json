@@ -1,0 +1,134 @@
+{
+  "provider": "ollama",
+  "model": "qwen2.5:3b",
+  "mode": "centralized",
+  "results": [
+    {
+      "task": "customer_incident",
+      "seed": 100,
+      "success": false,
+      "truncated": false,
+      "policy_error": "RuntimeError: LLM policy failed after 5 attempts: exact/cyclic no-progress action already attempted since the last state change",
+      "steps": 2,
+      "reward": 0.3,
+      "progress": 0.0,
+      "invalid_actions": 0,
+      "invalid_action_rate": 0.0,
+      "repeated_actions": 0,
+      "trajectory": [
+        {
+          "step": 1,
+          "agent": "pm_01",
+          "app": "gmail",
+          "action": "search_emails",
+          "parameters": {
+            "query": "authentication outage"
+          },
+          "result": {
+            "success": true,
+            "message": "Email search complete",
+            "data": {
+              "results": []
+            },
+            "changed": false,
+            "coordination": false,
+            "informative": true
+          },
+          "reward": 0.15,
+          "progress": 0.0,
+          "reward_components": {
+            "useful_or_redundant": 0.25,
+            "progress": 0.0,
+            "coordination": 0.0,
+            "terminal": 0.0,
+            "step_cost": -0.1
+          },
+          "subgoals": {
+            "discover_report": false,
+            "identify_incident": false,
+            "assign_engineer": false,
+            "notify_engineer": false,
+            "investigate": false,
+            "schedule_review": false,
+            "resolve": false,
+            "notify_customer": false
+          }
+        },
+        {
+          "step": 2,
+          "agent": "pm_01",
+          "app": "jira",
+          "action": "search_issues",
+          "parameters": {
+            "query": "production authentication outage"
+          },
+          "result": {
+            "success": true,
+            "message": "Jira search complete",
+            "data": {
+              "results": []
+            },
+            "changed": false,
+            "coordination": false,
+            "informative": true
+          },
+          "reward": 0.15,
+          "progress": 0.0,
+          "reward_components": {
+            "useful_or_redundant": 0.25,
+            "progress": 0.0,
+            "coordination": 0.0,
+            "terminal": 0.0,
+            "step_cost": -0.1
+          },
+          "subgoals": {
+            "discover_report": false,
+            "identify_incident": false,
+            "assign_engineer": false,
+            "notify_engineer": false,
+            "investigate": false,
+            "schedule_review": false,
+            "resolve": false,
+            "notify_customer": false
+          }
+        }
+      ],
+      "llm": {
+        "calls": 8,
+        "parse_failures": 0,
+        "provider_errors": 0,
+        "validation_rejections": 0,
+        "duplicate_rejections": 6,
+        "recovery_actions": 0,
+        "prompt_tokens": 16324,
+        "completion_tokens": 230,
+        "latency_s": 61.34502830004203
+      }
+    }
+  ],
+  "summary": {
+    "customer_incident": {
+      "episodes": 1,
+      "success_rate": 0.0,
+      "success_count": 0,
+      "success_rate_95ci": [
+        0.0,
+        0.7934567085261071
+      ],
+      "avg_reward": 0.3,
+      "reward_std": 0.0,
+      "avg_steps": 2.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 0.0,
+      "avg_progress": 0.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 1.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "llm_calls": 8,
+      "prompt_tokens": 16324,
+      "completion_tokens": 230,
+      "llm_latency_s": 61.34502830004203
+    }
+  }
+}

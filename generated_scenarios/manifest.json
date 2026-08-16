@@ -1,0 +1,19 @@
+{
+  "difficulty": "hard",
+  "factory_seed": 42,
+  "splits": {
+    "dev": {
+      "episodes": 12,
+      "file": "dev.jsonl"
+    },
+    "test": {
+      "episodes": 20,
+      "file": "test.jsonl"
+    },
+    "train": {
+      "episodes": 40,
+      "file": "train.jsonl"
+    }
+  },
+  "version": 1
+}

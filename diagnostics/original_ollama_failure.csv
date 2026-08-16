@@ -1,0 +1,2 @@
+task,seed,success,truncated,steps,reward,progress,invalid_action_rate,repeated_actions,policy_error
+customer_incident,100,False,False,2,0.3,0.0,0.0,0,RuntimeError: LLM policy failed after 5 attempts: exact/cyclic no-progress action already attempted since the last state change

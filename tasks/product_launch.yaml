@@ -1,0 +1,8 @@
+task_id: product_launch_v2
+name: Checkout Launch Go/No-Go
+difficulty: hard
+agents: [product_01, eng_01, mgr_01]
+apps: [jira, slack, calendar]
+meaningful_tool_calls: 7-15
+horizon: 35
+capabilities: [approval_chain, delegation, cross_role_handoff, coordination]

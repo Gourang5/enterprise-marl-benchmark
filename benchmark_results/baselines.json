@@ -1,0 +1,210 @@
+{
+  "customer_incident": {
+    "rule": {
+      "episodes": 25,
+      "success_rate": 1.0,
+      "success_count": 25,
+      "success_rate_95ci": [
+        0.8668035060468213,
+        1.0
+      ],
+      "avg_reward": 92.65,
+      "reward_std": 0.0,
+      "avg_steps": 11.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 11.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "random": {
+      "episodes": 25,
+      "success_rate": 0.0,
+      "success_count": 0,
+      "success_rate_95ci": [
+        0.0,
+        0.13319649395317873
+      ],
+      "avg_reward": -31.530000000000005,
+      "reward_std": 12.915631678964324,
+      "avg_steps": 35.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 0.0,
+      "avg_progress": 0.0,
+      "timeout_rate": 1.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.25142857142857145,
+      "avg_repeated_actions": 3.52,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.52,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  },
+  "product_launch": {
+    "rule": {
+      "episodes": 25,
+      "success_rate": 1.0,
+      "success_count": 25,
+      "success_rate_95ci": [
+        0.8668035060468213,
+        1.0
+      ],
+      "avg_reward": 90.2,
+      "reward_std": 0.0,
+      "avg_steps": 8.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 8.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "random": {
+      "episodes": 25,
+      "success_rate": 0.0,
+      "success_count": 0,
+      "success_rate_95ci": [
+        0.0,
+        0.13319649395317873
+      ],
+      "avg_reward": -32.07828571428572,
+      "reward_std": 11.951136960970034,
+      "avg_steps": 35.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 0.0,
+      "avg_progress": 0.005714285714285714,
+      "timeout_rate": 1.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.24457142857142855,
+      "avg_repeated_actions": 3.64,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.56,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  },
+  "meeting_conflict": {
+    "rule": {
+      "episodes": 25,
+      "success_rate": 1.0,
+      "success_count": 25,
+      "success_rate_95ci": [
+        0.8668035060468213,
+        1.0
+      ],
+      "avg_reward": 87.6,
+      "reward_std": 0.0,
+      "avg_steps": 4.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 4.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "random": {
+      "episodes": 25,
+      "success_rate": 0.0,
+      "success_count": 0,
+      "success_rate_95ci": [
+        0.0,
+        0.13319649395317873
+      ],
+      "avg_reward": -43.184000000000005,
+      "reward_std": 12.696749255879112,
+      "avg_steps": 25.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 0.0,
+      "avg_progress": 0.064,
+      "timeout_rate": 1.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.44160000000000005,
+      "avg_repeated_actions": 2.2,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.36,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  },
+  "launch_readiness": {
+    "rule": {
+      "episodes": 25,
+      "success_rate": 1.0,
+      "success_count": 25,
+      "success_rate_95ci": [
+        0.8668035060468213,
+        1.0
+      ],
+      "avg_reward": 103.55000000000001,
+      "reward_std": 0.0,
+      "avg_steps": 17.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 17.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "random": {
+      "episodes": 25,
+      "success_rate": 0.0,
+      "success_count": 0,
+      "success_rate_95ci": [
+        0.0,
+        0.13319649395317873
+      ],
+      "avg_reward": -34.06000000000001,
+      "reward_std": 14.305768067461472,
+      "avg_steps": 45.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 0.0,
+      "avg_progress": 0.01,
+      "timeout_rate": 1.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.2177777777777778,
+      "avg_repeated_actions": 6.68,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.6,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  }
+}

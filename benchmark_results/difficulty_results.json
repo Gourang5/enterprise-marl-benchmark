@@ -1,0 +1,1279 @@
+{
+  "tasks": [
+    "customer_incident",
+    "product_launch",
+    "meeting_conflict",
+    "launch_readiness",
+    "budget_approval",
+    "vendor_onboarding"
+  ],
+  "difficulties": [
+    "easy",
+    "medium",
+    "hard",
+    "adversarial"
+  ],
+  "episodes_per_cell": 5,
+  "report": {
+    "customer_incident": {
+      "easy": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 92.65,
+          "reward_std": 0.0,
+          "avg_steps": 11.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 11.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.25,
+          "reward_std": 9.774648331270036,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.2,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "medium": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 92.65,
+          "reward_std": 0.0,
+          "avg_steps": 11.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 11.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.03,
+          "reward_std": 10.704298202124235,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.20571428571428568,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "hard": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 92.65,
+          "reward_std": 0.0,
+          "avg_steps": 11.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 11.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.580000000000002,
+          "reward_std": 8.569247341511396,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.20571428571428568,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "adversarial": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 92.65,
+          "reward_std": 0.0,
+          "avg_steps": 11.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 11.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.860000000000003,
+          "reward_std": 11.528410558268652,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.21142857142857144,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      }
+    },
+    "product_launch": {
+      "easy": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.2,
+          "reward_std": 0.0,
+          "avg_steps": 8.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 8.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -31.119999999999997,
+          "reward_std": 5.728066864134889,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.22285714285714286,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "medium": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.2,
+          "reward_std": 0.0,
+          "avg_steps": 8.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 8.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.380000000000003,
+          "reward_std": 9.563903491775736,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.20571428571428568,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "hard": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.2,
+          "reward_std": 0.0,
+          "avg_steps": 8.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 8.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.93,
+          "reward_std": 7.6582961551509685,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.20571428571428568,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "adversarial": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.2,
+          "reward_std": 0.0,
+          "avg_steps": 8.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 8.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -30.21,
+          "reward_std": 10.368606463744301,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.21142857142857144,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      }
+    },
+    "meeting_conflict": {
+      "easy": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 87.75,
+          "reward_std": 0.0,
+          "avg_steps": 5.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 5.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -25.879999999999995,
+          "reward_std": 8.651054848976512,
+          "avg_steps": 25.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.04,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.2,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "medium": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 87.75,
+          "reward_std": 0.0,
+          "avg_steps": 5.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 5.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -28.25,
+          "reward_std": 7.688871828818584,
+          "avg_steps": 25.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.04,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.23200000000000004,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "hard": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 87.75,
+          "reward_std": 0.0,
+          "avg_steps": 5.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 5.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -27.390000000000004,
+          "reward_std": 7.9189172239644,
+          "avg_steps": 25.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.04,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.21600000000000003,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "adversarial": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 87.75,
+          "reward_std": 0.0,
+          "avg_steps": 5.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 5.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -27.339999999999996,
+          "reward_std": 8.287596153288362,
+          "avg_steps": 25.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.22400000000000003,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      }
+    },
+    "launch_readiness": {
+      "easy": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 103.55,
+          "reward_std": 1.5888218580782548e-14,
+          "avg_steps": 17.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 17.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -31.980000000000008,
+          "reward_std": 2.9480078018892812,
+          "avg_steps": 45.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.025,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.20444444444444443,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "medium": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 103.55,
+          "reward_std": 1.5888218580782548e-14,
+          "avg_steps": 17.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 17.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -26.82000000000001,
+          "reward_std": 14.673045014583721,
+          "avg_steps": 45.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.025,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.19555555555555554,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "hard": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 103.55,
+          "reward_std": 1.5888218580782548e-14,
+          "avg_steps": 17.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 17.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.49000000000001,
+          "reward_std": 10.252828877924385,
+          "avg_steps": 45.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.1911111111111111,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "adversarial": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 103.55,
+          "reward_std": 1.5888218580782548e-14,
+          "avg_steps": 17.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 17.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -26.44000000000001,
+          "reward_std": 13.864315706157308,
+          "avg_steps": 45.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.1911111111111111,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      }
+    },
+    "budget_approval": {
+      "easy": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.35,
+          "reward_std": 0.0,
+          "avg_steps": 9.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 9.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -32.361428571428576,
+          "reward_std": 5.332576051678849,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.02857142857142857,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.2457142857142857,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "medium": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.35,
+          "reward_std": 0.0,
+          "avg_steps": 9.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 9.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.550000000000004,
+          "reward_std": 3.8799162362092336,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.22857142857142856,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "hard": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.35,
+          "reward_std": 0.0,
+          "avg_steps": 9.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 9.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -30.130000000000003,
+          "reward_std": 3.7390841124532095,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.23428571428571426,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "adversarial": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.35,
+          "reward_std": 0.0,
+          "avg_steps": 9.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 9.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -29.291428571428575,
+          "reward_std": 6.8890837191745575,
+          "avg_steps": 35.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.02857142857142857,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.22285714285714286,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      }
+    },
+    "vendor_onboarding": {
+      "easy": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.5,
+          "reward_std": 0.0,
+          "avg_steps": 10.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 10.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -27.590000000000003,
+          "reward_std": 7.553095391956874,
+          "avg_steps": 40.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.025,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.19,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "medium": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.5,
+          "reward_std": 0.0,
+          "avg_steps": 10.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 10.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -26.68,
+          "reward_std": 15.329326469222323,
+          "avg_steps": 40.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.025,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.205,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "hard": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.5,
+          "reward_std": 0.0,
+          "avg_steps": 10.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 10.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -25.82,
+          "reward_std": 15.244941784080389,
+          "avg_steps": 40.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.025,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.195,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      },
+      "adversarial": {
+        "deterministic": {
+          "episodes": 5,
+          "success_rate": 1.0,
+          "success_count": 5,
+          "success_rate_95ci": [
+            0.5655085052479191,
+            1.0
+          ],
+          "avg_reward": 90.5,
+          "reward_std": 0.0,
+          "avg_steps": 10.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 10.0,
+          "avg_progress": 1.0,
+          "timeout_rate": 0.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.0,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        },
+        "random": {
+          "episodes": 5,
+          "success_rate": 0.0,
+          "success_count": 0,
+          "success_rate_95ci": [
+            0.0,
+            0.43449149475208104
+          ],
+          "avg_reward": -27.71,
+          "reward_std": 15.572588095753387,
+          "avg_steps": 40.0,
+          "steps_std": 0.0,
+          "avg_steps_on_success": 0.0,
+          "avg_progress": 0.0,
+          "timeout_rate": 1.0,
+          "policy_error_rate": 0.0,
+          "avg_invalid_action_rate": 0.21000000000000002,
+          "avg_repeated_actions": 0.0,
+          "avg_permission_violations": 0.0,
+          "avg_constraint_violations": 0.0,
+          "llm_calls": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "llm_latency_s": 0.0
+        }
+      }
+    }
+  }
+}

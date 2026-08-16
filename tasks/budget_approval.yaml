@@ -1,0 +1,8 @@
+task_id: budget_approval_v1
+name: Q1 Initiative Budget Approval
+difficulty: hard
+agents: [product_01, eng_01, mgr_01]
+apps: [gmail, jira, sheets, calendar, slack]
+meaningful_tool_calls: 7-18
+horizon: 35
+capabilities: [retrieval, multi_agent_handoff, sheet_tracking, cross_app_state, delegation]

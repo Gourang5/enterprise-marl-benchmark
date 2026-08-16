@@ -1,0 +1,158 @@
+{
+  "customer_incident": {
+    "shaped": {
+      "episodes": 10,
+      "success_rate": 1.0,
+      "success_count": 10,
+      "success_rate_95ci": [
+        0.7224598312333834,
+        1.0
+      ],
+      "avg_reward": 92.65,
+      "reward_std": 0.0,
+      "avg_steps": 11.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 11.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "sparse": {
+      "episodes": 10,
+      "success_rate": 1.0,
+      "success_count": 10,
+      "success_rate_95ci": [
+        0.7224598312333834,
+        1.0
+      ],
+      "avg_reward": 99.89,
+      "reward_std": 0.0,
+      "avg_steps": 11.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 11.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  },
+  "product_launch": {
+    "shaped": {
+      "episodes": 10,
+      "success_rate": 1.0,
+      "success_count": 10,
+      "success_rate_95ci": [
+        0.7224598312333834,
+        1.0
+      ],
+      "avg_reward": 90.2,
+      "reward_std": 0.0,
+      "avg_steps": 8.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 8.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "sparse": {
+      "episodes": 10,
+      "success_rate": 1.0,
+      "success_count": 10,
+      "success_rate_95ci": [
+        0.7224598312333834,
+        1.0
+      ],
+      "avg_reward": 99.92,
+      "reward_std": 0.0,
+      "avg_steps": 8.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 8.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  },
+  "meeting_conflict": {
+    "shaped": {
+      "episodes": 10,
+      "success_rate": 1.0,
+      "success_count": 10,
+      "success_rate_95ci": [
+        0.7224598312333834,
+        1.0
+      ],
+      "avg_reward": 87.75,
+      "reward_std": 0.0,
+      "avg_steps": 5.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 5.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    },
+    "sparse": {
+      "episodes": 10,
+      "success_rate": 1.0,
+      "success_count": 10,
+      "success_rate_95ci": [
+        0.7224598312333834,
+        1.0
+      ],
+      "avg_reward": 99.94999999999999,
+      "reward_std": 0.0,
+      "avg_steps": 5.0,
+      "steps_std": 0.0,
+      "avg_steps_on_success": 5.0,
+      "avg_progress": 1.0,
+      "timeout_rate": 0.0,
+      "policy_error_rate": 0.0,
+      "avg_invalid_action_rate": 0.0,
+      "avg_repeated_actions": 0.0,
+      "avg_permission_violations": 0.0,
+      "avg_constraint_violations": 0.0,
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "llm_latency_s": 0.0
+    }
+  }
+}

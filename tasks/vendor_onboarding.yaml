@@ -1,0 +1,8 @@
+task_id: vendor_onboarding_v1
+name: TechNova Solutions Vendor Onboarding
+difficulty: hard
+agents: [pm_01, product_01, eng_01, mgr_01, cs_01]
+apps: [gmail, jira, sheets, calendar, slack]
+meaningful_tool_calls: 9-22
+horizon: 40
+capabilities: [multi_issue_coordination, parallel_workflows, role_delegation, cross_app_state, sheet_tracking]

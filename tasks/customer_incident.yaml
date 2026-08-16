@@ -1,0 +1,8 @@
+task_id: customer_incident_v2
+name: P0 Partner Authentication Incident
+difficulty: hard
+agents: [pm_01, eng_01, cs_01]
+apps: [gmail, jira, slack, calendar]
+meaningful_tool_calls: 8-20
+horizon: 35
+capabilities: [retrieval, entity_correlation, delegation, delayed_credit, cross_app_state]

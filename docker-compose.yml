@@ -1,0 +1,65 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  model-bootstrap:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull $$OLLAMA_MODEL"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  benchmark:
+    build: .
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+    volumes:
+      - ./benchmark_results:/workspace/benchmark_results
+    depends_on:
+      model-bootstrap:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -c
+      - |
+        python scripts/diagnose.py --model $$OLLAMA_MODEL &&
+        python scripts/run_llm_benchmark.py \
+          --provider ollama \
+          --model $$OLLAMA_MODEL \
+          --task $${TASK:-all} \
+          --episodes $${EPISODES:-5} \
+          --mode $${MODE:-centralized}
+
+  ui:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+      STREAMLIT_SERVER_HEADLESS: "true"
+      STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
+    volumes:
+      - ./benchmark_results:/workspace/benchmark_results
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: ["streamlit", "run", "ui/app.py", "--server.headless=true", "--server.port=8501", "--server.address=0.0.0.0"]
+
+volumes:
+  ollama-data:
